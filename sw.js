@@ -8,7 +8,7 @@ const APP_SHELL = [
   "./js/games/simple-rain.js",
   "./js/peer-net.js",
   "./manifest.webmanifest",
-  "./icons/robot.svg"
+  "./icons/lotus.svg"
 ];
 
 self.addEventListener("install", (event) => {

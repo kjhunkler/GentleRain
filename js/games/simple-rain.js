@@ -65,6 +65,7 @@
     let handMessage = { text: "", previous: "", changedAt: 0, duration: 520 };
     const activePointers = new Map();
     const view = { zoom: 1, rot: 0, panX: 0, panY: 0 };
+    const cosmeticSeed = Math.floor(Math.random() * 1_000_000_000);
     const events = [];
     const pond = { tileIds: new Set(), entities: [], ripples: [] };
     const drops = [];
@@ -555,9 +556,6 @@
       state.won = !!snapshot.won;
       state.message = snapshot.message || "Listen to the rain and place the next tile.";
       applyEvents(snapshot.events);
-      pond.tileIds.clear();
-      pond.entities = [];
-      pond.ripples = [];
     }
 
     function ensureCanvasSize() {
@@ -684,7 +682,7 @@
 
     function spawnPondLifeForTile(k, id) {
       const cell = parseKey(k);
-      const seed = tileSeed(id);
+      const seed = tileSeed(`${id}-${cosmeticSeed}`);
       const roll = seeded(seed, 3);
       addPondEntity("pad", cell, seed, 0, 0.00022, 0.065);
       if (roll > 0.72) addPondEntity("koi", cell, seed, 1, 0.0010 + seeded(seed, 16) * 0.0014, 0.035);

@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#12121f" />
   <title>SimpleRain</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icons/robot.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icons/robot.svg" />
+  <link rel="icon" href="icons/lotus.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/lotus.svg" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -22,10 +22,36 @@
       <div class="play-menu-bar" aria-label="SimpleRain controls">
         <div class="session-pill"><span id="role-label">Joining</span> - <span id="player-count">0</span> players</div>
         <ul id="player-list" class="player-list compact"></ul>
+        <button id="btn-profile" class="menu-icon-btn profile-btn" aria-label="Profile" type="button">Me</button>
         <button id="btn-reset" class="menu-icon-btn reset-btn" aria-label="Reset game" type="button">Reset</button>
       </div>
       <canvas id="stage"></canvas>
     </section>
+  </div>
+
+  <div id="sheet-profile" class="sheet" aria-hidden="true">
+    <div class="sheet-header">
+      <h2>Profile</h2>
+      <button id="btn-close-profile" class="close-btn" aria-label="Close" type="button">x</button>
+    </div>
+    <div class="profile-preview-row">
+      <div class="profile-preview-main">
+        <div id="preview-dot" class="preview-dot"></div>
+        <span id="preview-name" class="preview-name"></span>
+      </div>
+    </div>
+    <div class="field-group">
+      <label for="input-name">Name</label>
+      <input id="input-name" type="text" class="text-input" maxlength="20" autocomplete="off" />
+    </div>
+    <div class="field-group">
+      <label>Color</label>
+      <div id="picker-color" class="swatch-grid"></div>
+    </div>
+    <div class="field-group">
+      <label>Icon</label>
+      <div id="picker-icon" class="icon-grid"></div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
