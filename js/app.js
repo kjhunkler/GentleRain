@@ -1,8 +1,9 @@
 /* SimpleRain app shell: auto host/join, profile editing, host-owned game state. */
 
-const APP_VERSION = "1.0.5";
+const APP_VERSION = "1.0.6";
 const AUTO_CHANNEL = "simple-rain";
 const GAME_SAVE_KEY = "simplerain-host-cache";
+const MUSIC_MUTED_KEY = "simplerain-music-muted";
 const PLAYER_HEARTBEAT_MS = 15000;
 const COLORS = ["#ff5d5d", "#ff9d4d", "#ffd24d", "#7CFC9B", "#33ddaa", "#4dd2ff", "#4d8bff", "#7766ff", "#c98cff", "#ff6fd0", "#22cc88", "#ff6600"];
 const ICONS = ["🐸", "🐢", "🐟", "🦆", "🦋", "🐞", "🐝", "🦗", "🦎", "🐌", "🦀", "🦊", "🐰", "🦝", "🦉", "🐿️"];
@@ -23,6 +24,8 @@ let migratingFromHostId = null;
 let statusText = "Starting SimpleRain...";
 let myColor = "";
 let nameTimer = null;
+let musicMuted = localStorage.getItem(MUSIC_MUTED_KEY) === "1";
+let sessionChannel = AUTO_CHANNEL;
 
 const players = new Map();
 const peerMap = new Map();
@@ -126,10 +129,13 @@ function renderPlayers() {
   const list = $("#player-list");
   if (!list) return;
   const visible = getVisiblePlayers();
+  const hostId = net.isHost ? MY_ID : lastHostOrder[0];
   list.innerHTML = "";
   for (const player of visible) {
     const li = document.createElement("li");
-    li.innerHTML = `<span class="swatch" style="background:${player.color}">${esc(displayIcon(player.icon))}</span>${esc(player.name)}`;
+    const crown = player.id === hostId ? `<span class="host-crown" aria-hidden="true">♛</span>` : "";
+    li.classList.toggle("host-player", player.id === hostId);
+    li.innerHTML = `<span class="swatch" style="background:${player.color}">${crown}${esc(displayIcon(player.icon))}</span>${esc(player.name)}`;
     list.appendChild(li);
   }
 }
@@ -166,6 +172,7 @@ function gameHostApi() {
     getPlayers: () => getVisiblePlayers(),
     getProfile: (id) => profiles.get(id),
     isSpeaking: () => false,
+    isMusicMuted: () => musicMuted,
     sendInput: (input) => net.send({ t: "game-input", input }),
     broadcastState: (state) => {
       if (!net.isHost) return;
@@ -173,6 +180,22 @@ function gameHostApi() {
       broadcastGameState(state);
     },
   };
+}
+
+function updateMusicButton() {
+  const button = $("#btn-music");
+  if (!button) return;
+  button.classList.toggle("muted", musicMuted);
+  button.textContent = musicMuted ? "Music Off" : "Music On";
+  button.setAttribute("aria-label", musicMuted ? "Unmute music" : "Mute music");
+  button.setAttribute("aria-pressed", String(musicMuted));
+}
+
+function toggleMusicMute() {
+  musicMuted = !musicMuted;
+  localStorage.setItem(MUSIC_MUTED_KEY, musicMuted ? "1" : "0");
+  updateMusicButton();
+  activeGame?.setMusicMuted?.(musicMuted);
 }
 
 function startGame(initialState = null) {
@@ -188,6 +211,31 @@ function startGame(initialState = null) {
     saveCachedGameState(state);
     broadcastGameState(state);
   }
+}
+
+function newLobbyChannel() {
+  return `${AUTO_CHANNEL}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function leaveAndHostNewLobby() {
+  if (!confirm("Leave this lobby and host a new empty lobby? Other players will stay in the current lobby.")) return;
+  closeProfileSheet();
+  stopHostLoop();
+  clearCachedGameState();
+  players.clear();
+  peerMap.clear();
+  usedColors.clear();
+  lastState = [];
+  lastHostOrder = [];
+  lastPlayersBroadcastAt = 0;
+  pendingGameState = null;
+  migratingFromHostId = null;
+  activeGame?.destroy?.();
+  activeGame = null;
+  sessionChannel = newLobbyChannel();
+  show("loading");
+  setStatus("Hosting a new SimpleRain lobby...");
+  net.migrate(sessionChannel, true);
 }
 
 function ensureGameStarted(initialState = null) {
@@ -352,7 +400,7 @@ function wireNetEvents() {
     const preferHost = myIndex === 0;
     const delay = myIndex < 0 ? 300 : myIndex * 700;
     stopHostLoop();
-    setTimeout(() => net.migrate(AUTO_CHANNEL, preferHost), delay);
+    setTimeout(() => net.migrate(sessionChannel, preferHost), delay);
   });
 
   net.on("message", ({ from, data }) => {
@@ -363,7 +411,7 @@ function wireNetEvents() {
   net.on("error", (err) => {
     console.error(err);
     setStatus("Connection issue. Retrying...");
-    setTimeout(() => net.migrate(AUTO_CHANNEL, false), 1200);
+    setTimeout(() => net.migrate(sessionChannel, false), 1200);
   });
 }
 
@@ -493,6 +541,8 @@ function esc(s) {
 }
 
 $("#btn-reset")?.addEventListener("click", resetGame);
+$("#btn-music")?.addEventListener("click", toggleMusicMute);
+$("#btn-leave-lobby")?.addEventListener("click", leaveAndHostNewLobby);
 $("#btn-profile")?.addEventListener("click", openProfileSheet);
 $("#btn-close-profile")?.addEventListener("click", closeProfileSheet);
 $("#input-name")?.addEventListener("input", (event) => {
@@ -524,10 +574,11 @@ $("#input-icon")?.addEventListener("input", (event) => {
 });
 $("#menu-version").textContent = `Version ${APP_VERSION}`;
 updateProfilePreview();
+updateMusicButton();
 
 wireNetEvents();
 registerServiceWorker();
 show("loading");
 setStatus("Finding a SimpleRain session...");
-net.auto(AUTO_CHANNEL);
+net.auto(sessionChannel);
 render();

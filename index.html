@@ -20,7 +20,6 @@
 
     <section id="screen-play" class="screen">
       <div class="play-menu-bar" aria-label="SimpleRain controls">
-        <button id="btn-reset" class="menu-icon-btn reset-btn" aria-label="Reset game" type="button">Reset</button>
         <ul id="player-list" class="player-list"></ul>
         <button id="btn-profile" class="profile-menu-btn" aria-label="Edit profile" type="button">
           <span id="menu-profile-dot" class="menu-profile-dot"></span>
@@ -52,6 +51,12 @@
     <div class="field-group">
       <label for="input-icon">Emoji</label>
       <input id="input-icon" type="text" class="text-input emoji-input" maxlength="8" autocomplete="off" inputmode="text" />
+    </div>
+    <div class="manage-group">
+      <h3>Lobby</h3>
+      <button id="btn-music" class="manage-btn" aria-label="Mute music" type="button" aria-pressed="false">Music On</button>
+      <button id="btn-reset" class="manage-btn" type="button">Reset Game</button>
+      <button id="btn-leave-lobby" class="manage-btn danger" type="button">Leave & Host New Lobby</button>
     </div>
   </div>
 

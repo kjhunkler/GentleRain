@@ -155,6 +155,7 @@
     }
 
     function playMusicStep() {
+      if (host.isMusicMuted?.()) return;
       try {
         ensureAudio();
         const t = audioCtx.currentTime + 0.03;
@@ -172,6 +173,7 @@
     }
 
     function startMusic() {
+      if (host.isMusicMuted?.()) return;
       if (musicTimer) return;
       playMusicStep();
       musicTimer = setInterval(playMusicStep, 1650);
@@ -2105,6 +2107,7 @@
       onState(snapshot) { applySnapshot(snapshot); },
       getSnapshot() { return currentSnapshot(); },
       onPlayerList() { if (isHost()) { reconcileActivePlayerTiles(); host.broadcastState(makeSnapshot()); } },
+      setMusicMuted(muted) { if (muted) stopMusic(); else startMusic(); },
       restart() { if (isHost()) resetHostState(); },
     };
   }
