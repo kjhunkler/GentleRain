@@ -132,17 +132,6 @@ input, textarea, select {
   padding: 8px 14px;
   border-radius: 20px;
 }
-.player-list.compact {
-  flex: 1 1 auto;
-  justify-content: flex-start;
-  overflow: hidden;
-  flex-wrap: nowrap;
-}
-.player-list.compact li {
-  flex: 0 0 auto;
-  padding: 6px 10px;
-  font-size: 0.85rem;
-}
 .swatch {
   width: 14px;
   height: 14px;
@@ -552,6 +541,22 @@ input, textarea, select {
   font-size: 1rem;
 }
 .text-input:focus { outline: none; border-color: var(--accent); }
+
+.profile-color-input {
+  width: 72px;
+  height: 48px;
+  padding: 2px;
+  border-radius: 12px;
+  border: 2px solid #2c2c44;
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.emoji-input {
+  width: 86px;
+  text-align: center;
+  font-size: 1.8rem;
+}
 
 .swatch-grid {
   display: flex;

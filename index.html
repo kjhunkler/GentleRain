@@ -20,7 +20,7 @@
 
     <section id="screen-play" class="screen">
       <div class="play-menu-bar" aria-label="SimpleRain controls">
-        <ul id="player-list" class="player-list compact"></ul>
+        <ul id="player-list" class="player-list"></ul>
         <button id="btn-profile" class="menu-icon-btn profile-btn" aria-label="Profile" type="button">Me</button>
         <button id="btn-reset" class="menu-icon-btn reset-btn" aria-label="Reset game" type="button">Reset</button>
       </div>
@@ -44,12 +44,12 @@
       <input id="input-name" type="text" class="text-input" maxlength="20" autocomplete="off" />
     </div>
     <div class="field-group">
-      <label>Color</label>
-      <div id="picker-color" class="swatch-grid"></div>
+      <label for="input-color">Color</label>
+      <input id="input-color" class="profile-color-input" type="color" />
     </div>
     <div class="field-group">
-      <label>Icon</label>
-      <div id="picker-icon" class="icon-grid"></div>
+      <label for="input-icon">Emoji</label>
+      <input id="input-icon" type="text" class="text-input emoji-input" maxlength="8" autocomplete="off" inputmode="text" />
     </div>
   </div>
 

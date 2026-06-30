@@ -1,6 +1,6 @@
 /* SimpleRain app shell: auto host/join, profile editing, host-owned game state. */
 
-const APP_VERSION = "1.0.1";
+const APP_VERSION = "1.0.2";
 const AUTO_CHANNEL = "simple-rain";
 const GAME_SAVE_KEY = "simplerain-host-cache";
 const PLAYER_HEARTBEAT_MS = 15000;
@@ -86,6 +86,12 @@ function setStatus(text) {
 
 function displayIcon(icon) {
   return icon || "🌧️";
+}
+
+function firstEmoji(value) {
+  const text = String(value || "").trim();
+  const match = text.match(/\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?)*/u);
+  return match ? match[0] : "";
 }
 
 function pickColor() {
@@ -216,8 +222,10 @@ function resetGame() {
 function openProfileSheet() {
   const input = $("#input-name");
   if (input) input.value = profile.name;
-  buildColorPicker();
-  buildIconPicker();
+  const color = $("#input-color");
+  if (color) color.value = profile.color || myColor || COLORS[0];
+  const icon = $("#input-icon");
+  if (icon) icon.value = profile.icon;
   updateProfilePreview();
   $("#sheet-profile")?.classList.add("open");
 }
@@ -236,50 +244,6 @@ function updateProfilePreview() {
   }
   const name = $("#preview-name");
   if (name) name.textContent = profile.name;
-}
-
-function buildColorPicker() {
-  const grid = $("#picker-color");
-  if (!grid) return;
-  grid.innerHTML = "";
-  for (const color of COLORS) {
-    const btn = document.createElement("button");
-    btn.className = "swatch-opt" + (color === (profile.color || myColor) ? " selected" : "");
-    btn.style.background = color;
-    btn.type = "button";
-    btn.setAttribute("aria-label", color);
-    btn.addEventListener("click", () => {
-      profile.color = color;
-      localStorage.setItem("simplerain-color", color);
-      broadcastProfile();
-      buildColorPicker();
-      updateProfilePreview();
-    });
-    grid.appendChild(btn);
-  }
-}
-
-function buildIconPicker() {
-  const grid = $("#picker-icon");
-  if (!grid) return;
-  grid.innerHTML = "";
-  for (const icon of ICONS) {
-    const btn = document.createElement("button");
-    btn.className = "icon-opt" + (icon === profile.icon ? " selected" : "");
-    btn.type = "button";
-    btn.textContent = displayIcon(icon);
-    btn.title = icon;
-    btn.setAttribute("aria-label", icon);
-    btn.addEventListener("click", () => {
-      profile.icon = icon;
-      localStorage.setItem("simplerain-icon", icon);
-      profiles.set(MY_ID, { ...profiles.get(MY_ID), icon });
-      broadcastProfile();
-      buildIconPicker();
-      updateProfilePreview();
-    });
-    grid.appendChild(btn);
-  }
 }
 
 function broadcastProfile() {
@@ -462,7 +426,8 @@ function handleClientMessage(msg) {
       profile.color = msg.color;
       localStorage.setItem("simplerain-color", msg.color);
       updateProfilePreview();
-      buildColorPicker();
+      const color = $("#input-color");
+      if (color) color.value = msg.color;
     }
     const player = lastState.find((p) => p.id === msg.id);
     if (player) {
@@ -542,6 +507,25 @@ $("#input-name")?.addEventListener("input", (event) => {
   updateProfilePreview();
   clearTimeout(nameTimer);
   nameTimer = setTimeout(broadcastProfile, 350);
+});
+$("#input-color")?.addEventListener("input", (event) => {
+  profile.color = event.target.value || COLORS[0];
+  localStorage.setItem("simplerain-color", profile.color);
+  updateProfilePreview();
+  broadcastProfile();
+});
+$("#input-icon")?.addEventListener("input", (event) => {
+  const emoji = firstEmoji(event.target.value);
+  if (!emoji) {
+    event.target.value = "";
+    return;
+  }
+  event.target.value = emoji;
+  profile.icon = emoji;
+  localStorage.setItem("simplerain-icon", emoji);
+  profiles.set(MY_ID, { ...profiles.get(MY_ID), icon: emoji });
+  updateProfilePreview();
+  broadcastProfile();
 });
 $("#menu-version").textContent = `Version ${APP_VERSION}`;
 

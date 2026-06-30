@@ -1908,7 +1908,8 @@
     }
 
     function onKeyDown(e) {
-      if (e.target?.closest?.("input, textarea, select, [contenteditable='true']")) return;
+      const target = document.activeElement || e.target;
+      if (target?.closest?.("input, textarea, select, [contenteditable='true']")) return;
       if (e.key === "r" || e.key === "R" || e.key === " ") { e.preventDefault(); rotateCurrent(); }
       else if (e.key === "d" || e.key === "D") { e.preventDefault(); sendAction({ type: "swap" }); }
       else if (e.key === "q" || e.key === "Q") { e.preventDefault(); view.rot -= Math.PI / 12; }
