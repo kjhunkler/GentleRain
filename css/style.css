@@ -608,6 +608,84 @@ input, textarea, select {
   font-size: 0.95rem;
 }
 
+.lobby-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lobby-controls.hidden { display: none; }
+
+.lobby-left-message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.lobby-code-group {
+  gap: 8px;
+}
+
+.invite-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(8, 20, 30, 0.38);
+}
+
+.invite-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.invite-code-row strong {
+  color: var(--accent);
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.invite-qr-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.invite-qr {
+  width: 148px;
+  height: 148px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.invite-link-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.invite-link-input {
+  font-size: 0.84rem;
+}
+
+.invite-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .manage-btn {
   width: 100%;
   min-height: 44px;
@@ -618,6 +696,7 @@ input, textarea, select {
   font-size: 0.95rem;
   font-weight: 800;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .manage-btn:active { transform: scale(0.98); }

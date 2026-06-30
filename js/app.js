@@ -4,6 +4,7 @@ const APP_VERSION = "1.0.6";
 const AUTO_CHANNEL = "simple-rain";
 const GAME_SAVE_KEY = "simplerain-host-cache";
 const MUSIC_MUTED_KEY = "simplerain-music-muted";
+const LOBBY_PARAM = "lobby";
 const PLAYER_HEARTBEAT_MS = 15000;
 const COLORS = ["#ff5d5d", "#ff9d4d", "#ffd24d", "#7CFC9B", "#33ddaa", "#4dd2ff", "#4d8bff", "#7766ff", "#c98cff", "#ff6fd0", "#22cc88", "#ff6600"];
 const ICONS = ["🐸", "🐢", "🐟", "🦆", "🦋", "🐞", "🐝", "🦗", "🦎", "🐌", "🦀", "🦊", "🐰", "🦝", "🦉", "🐿️"];
@@ -25,12 +26,46 @@ let statusText = "Starting SimpleRain...";
 let myColor = "";
 let nameTimer = null;
 let musicMuted = localStorage.getItem(MUSIC_MUTED_KEY) === "1";
-let sessionChannel = AUTO_CHANNEL;
+let sessionChannel = initialLobbyChannel();
+let showInviteAfterReady = false;
+let inLobby = true;
 
 const players = new Map();
 const peerMap = new Map();
 const profiles = new Map();
 let usedColors = new Set();
+
+function normalizeLobbyChannel(value) {
+  try {
+    const url = new URL(String(value || ""));
+    value = url.searchParams.get(LOBBY_PARAM) || value;
+  } catch {}
+  const text = String(value || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return text || AUTO_CHANNEL;
+}
+
+function initialLobbyChannel() {
+  try {
+    const params = new URLSearchParams(location.search);
+    return normalizeLobbyChannel(params.get(LOBBY_PARAM) || AUTO_CHANNEL);
+  } catch {
+    return AUTO_CHANNEL;
+  }
+}
+
+function inviteUrl() {
+  const url = new URL(location.href);
+  url.searchParams.set(LOBBY_PARAM, sessionChannel);
+  url.hash = "";
+  return url.toString();
+}
+
+function updateLobbyUrl() {
+  const url = new URL(location.href);
+  if (sessionChannel === AUTO_CHANNEL) url.searchParams.delete(LOBBY_PARAM);
+  else url.searchParams.set(LOBBY_PARAM, sessionChannel);
+  history.replaceState(null, "", url.toString());
+}
 
 function clientId() {
   let id = localStorage.getItem("simplerain-client-id");
@@ -198,6 +233,67 @@ function toggleMusicMute() {
   activeGame?.setMusicMuted?.(musicMuted);
 }
 
+function updateInvitePanel() {
+  const url = inviteUrl();
+  const code = $("#invite-code");
+  if (code) code.textContent = sessionChannel;
+  const link = $("#invite-link");
+  if (link) link.value = url;
+  const qr = $("#invite-qr");
+  if (qr) qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(url)}`;
+}
+
+function updateLobbyControls() {
+  $("#lobby-active-controls")?.classList.toggle("hidden", !inLobby);
+  $("#lobby-left-controls")?.classList.toggle("hidden", inLobby);
+  const code = $("#input-lobby-code");
+  if (code && !code.value) code.value = sessionChannel;
+}
+
+async function copyInviteLink() {
+  const url = inviteUrl();
+  try {
+    await navigator.clipboard?.writeText(url);
+  } catch {
+    const input = $("#invite-link");
+    input?.select?.();
+    document.execCommand?.("copy");
+  }
+}
+
+async function shareInviteLink() {
+  const url = inviteUrl();
+  const text = `Join my SimpleRain lobby: ${url}`;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "SimpleRain lobby", text, url });
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+    }
+  }
+  location.href = `sms:?&body=${encodeURIComponent(text)}`;
+}
+
+function wireManageControls() {
+  const reset = $("#btn-reset");
+  if (reset) reset.onclick = resetGame;
+  const music = $("#btn-music");
+  if (music) music.onclick = toggleMusicMute;
+  const leave = $("#btn-leave-lobby");
+  if (leave) leave.onclick = leaveLobby;
+  const copy = $("#btn-copy-invite");
+  if (copy) copy.onclick = copyInviteLink;
+  const share = $("#btn-share-invite");
+  if (share) share.onclick = shareInviteLink;
+  const host = $("#btn-host-lobby");
+  if (host) host.onclick = hostNewLobby;
+  const global = $("#btn-rejoin-global");
+  if (global) global.onclick = rejoinGlobalLobby;
+  const join = $("#btn-join-lobby");
+  if (join) join.onclick = joinLobbyFromCode;
+}
+
 function startGame(initialState = null) {
   activeGame?.destroy?.();
   activeGame = window.SimpleRainGame.create(gameHostApi(), initialState);
@@ -217,11 +313,9 @@ function newLobbyChannel() {
   return `${AUTO_CHANNEL}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function leaveAndHostNewLobby() {
-  if (!confirm("Leave this lobby and host a new empty lobby? Other players will stay in the current lobby.")) return;
-  closeProfileSheet();
+function leaveLobby() {
+  if (!confirm("Leave this lobby? Other players will stay in the current lobby.")) return;
   stopHostLoop();
-  clearCachedGameState();
   players.clear();
   peerMap.clear();
   usedColors.clear();
@@ -232,10 +326,42 @@ function leaveAndHostNewLobby() {
   migratingFromHostId = null;
   activeGame?.destroy?.();
   activeGame = null;
-  sessionChannel = newLobbyChannel();
+  net.destroy();
+  inLobby = false;
+  showInviteAfterReady = false;
+  setStatus("Not in a lobby");
   show("loading");
-  setStatus("Hosting a new SimpleRain lobby...");
-  net.migrate(sessionChannel, true);
+  updateLobbyControls();
+  openProfileSheet();
+}
+
+function connectToLobby(channel, preferHost = false, openInviteWhenReady = false) {
+  sessionChannel = normalizeLobbyChannel(channel);
+  inLobby = true;
+  showInviteAfterReady = openInviteWhenReady;
+  updateLobbyUrl();
+  updateInvitePanel();
+  updateLobbyControls();
+  show("loading");
+  setStatus(preferHost ? "Hosting a new SimpleRain lobby..." : "Finding a SimpleRain session...");
+  net.migrate(sessionChannel, preferHost);
+}
+
+function hostNewLobby() {
+  clearCachedGameState();
+  pendingGameState = null;
+  activeGame?.destroy?.();
+  activeGame = null;
+  connectToLobby(newLobbyChannel(), true, true);
+}
+
+function rejoinGlobalLobby() {
+  connectToLobby(AUTO_CHANNEL, false, false);
+}
+
+function joinLobbyFromCode() {
+  const code = $("#input-lobby-code")?.value;
+  connectToLobby(code || AUTO_CHANNEL, false, false);
 }
 
 function ensureGameStarted(initialState = null) {
@@ -264,6 +390,10 @@ function openProfileSheet() {
   const icon = $("#input-icon");
   if (icon) icon.value = profile.icon;
   updateProfilePreview();
+  updateMusicButton();
+  updateInvitePanel();
+  updateLobbyControls();
+  wireManageControls();
   $("#sheet-profile")?.classList.add("open");
 }
 
@@ -344,6 +474,7 @@ function queueStateForPeer(peerId) {
 
 function wireNetEvents() {
   net.on("ready", () => {
+    inLobby = true;
     setStatus("Hosting SimpleRain");
     players.clear();
     peerMap.clear();
@@ -364,13 +495,22 @@ function wireNetEvents() {
     ensureGameStarted(pendingGameState || loadCachedGameState());
     renderPlayers();
     show("play");
+    updateInvitePanel();
+    updateLobbyControls();
+    if (showInviteAfterReady) {
+      showInviteAfterReady = false;
+      openProfileSheet();
+    }
   });
 
   net.on("connected", () => {
+    inLobby = true;
     setStatus("Joined SimpleRain");
     net.send({ t: "hello", id: MY_ID, name: profile.name, icon: profile.icon, preferredColor: profile.color });
     ensureGameStarted(loadCachedGameState());
     show("play");
+    updateInvitePanel();
+    updateLobbyControls();
   });
 
   net.on("peer-join", () => renderPlayers());
@@ -540,9 +680,6 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
-$("#btn-reset")?.addEventListener("click", resetGame);
-$("#btn-music")?.addEventListener("click", toggleMusicMute);
-$("#btn-leave-lobby")?.addEventListener("click", leaveAndHostNewLobby);
 $("#btn-profile")?.addEventListener("click", openProfileSheet);
 $("#btn-close-profile")?.addEventListener("click", closeProfileSheet);
 $("#input-name")?.addEventListener("input", (event) => {
@@ -575,6 +712,10 @@ $("#input-icon")?.addEventListener("input", (event) => {
 $("#menu-version").textContent = `Version ${APP_VERSION}`;
 updateProfilePreview();
 updateMusicButton();
+updateLobbyUrl();
+updateInvitePanel();
+updateLobbyControls();
+wireManageControls();
 
 wireNetEvents();
 registerServiceWorker();

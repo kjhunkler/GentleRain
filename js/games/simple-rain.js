@@ -55,6 +55,7 @@
     let lastCssHeight = 0;
     let activePointerId = null;
     let audioCtx = null;
+    let musicGain = null;
     let musicTimer = null;
     let musicStep = 0;
     let eventSeq = 0;
@@ -131,6 +132,11 @@
 
     function ensureAudio() {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (!musicGain) {
+        musicGain = audioCtx.createGain();
+        musicGain.gain.value = host.isMusicMuted?.() ? 0 : 1;
+        musicGain.connect(audioCtx.destination);
+      }
       if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
       return audioCtx;
     }
@@ -149,7 +155,7 @@
       gain.gain.exponentialRampToValueAtTime(vol, start + 0.18);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
       osc.connect(gain);
-      gain.connect(audioCtx.destination);
+      gain.connect(musicGain || audioCtx.destination);
       osc.start(start);
       osc.stop(start + dur + 0.05);
     }
@@ -549,15 +555,25 @@
       else host.sendInput(input);
     }
 
+    function dragMatchesCurrent(current = currentFor()) {
+      return !!(drag?.tile?.id && current?.tile?.id && drag.tile.id === current.tile.id);
+    }
+
+    function syncDragRotation(current = currentFor()) {
+      if (!dragMatchesCurrent(current)) return;
+      drag.tile = current.tile;
+      drag.rot = current.rot || 0;
+    }
+
     function rotateCurrent() {
       const current = currentFor();
       if (!current?.tile || state.over) return;
       if (!isHost()) {
         current.rot = ((current.rot || 0) + 1) % 4;
-        if (drag?.tile === current.tile) drag.rot = current.rot;
+        syncDragRotation(current);
       }
       sendAction({ type: "rotate" });
-      if (isHost() && drag?.tile === current.tile) drag.rot = current.rot || 0;
+      if (isHost()) syncDragRotation(current);
     }
 
     function score() {
@@ -628,6 +644,7 @@
       state.won = !!snapshot.won;
       state.message = snapshot.message || "Listen to the rain and place the next tile.";
       applyEvents(snapshot.events);
+      syncDragRotation();
     }
 
     function ensureCanvasSize() {
@@ -2107,7 +2124,11 @@
       onState(snapshot) { applySnapshot(snapshot); },
       getSnapshot() { return currentSnapshot(); },
       onPlayerList() { if (isHost()) { reconcileActivePlayerTiles(); host.broadcastState(makeSnapshot()); } },
-      setMusicMuted(muted) { if (muted) stopMusic(); else startMusic(); },
+      setMusicMuted(muted) {
+        if (musicGain) musicGain.gain.setTargetAtTime(muted ? 0 : 1, audioCtx.currentTime, 0.02);
+        if (muted) stopMusic();
+        else startMusic();
+      },
       restart() { if (isHost()) resetHostState(); },
     };
   }
