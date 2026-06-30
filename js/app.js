@@ -1,6 +1,6 @@
 /* SimpleRain app shell: auto host/join, profile editing, host-owned game state. */
 
-const APP_VERSION = "1.0.4";
+const APP_VERSION = "1.0.5";
 const AUTO_CHANNEL = "simple-rain";
 const GAME_SAVE_KEY = "simplerain-host-cache";
 const PLAYER_HEARTBEAT_MS = 15000;
@@ -523,6 +523,7 @@ $("#input-icon")?.addEventListener("input", (event) => {
   broadcastProfile();
 });
 $("#menu-version").textContent = `Version ${APP_VERSION}`;
+updateProfilePreview();
 
 wireNetEvents();
 registerServiceWorker();

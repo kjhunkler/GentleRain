@@ -275,10 +275,6 @@
       return pool;
     }
 
-    function playerTileCount(id) {
-      return (state.hands[id]?.length || 0) + (state.currentByPlayer[id]?.tile ? 1 : 0);
-    }
-
     function validateRemainingTiles() {
       if (!isHost()) return;
       const changed = reconcileActivePlayerTiles();
@@ -845,6 +841,7 @@
         return;
       }
       gentleSteer(e, t, 0.003);
+      e.angle = Math.atan2(e.vy, e.vx);
       e.x += e.vx * step;
       e.y += e.vy * step;
       steerIntoPond(e, t, 0.004);
@@ -1048,33 +1045,27 @@
       ctx.font = "13px system-ui, sans-serif";
       ctx.fillStyle = "rgba(233,249,255,0.82)";
       ctx.fillText(`${Object.keys(state.used).length}/8 blossoms · ${remainingTiles()} tiles unplaced · score ${score()}`, W / 2, 64);
-      drawPlayerStrip(W);
+      drawBlossomProgress(W);
     }
 
-    function drawPlayerStrip(W) {
-      const players = host.getPlayers();
-      const totalW = Math.min(W - 120, players.length * 82);
-      let x = W / 2 - totalW / 2;
-      for (const p of players) {
-        const count = playerTileCount(p.id);
+    function drawBlossomProgress(W) {
+      const gap = 10;
+      const r = 7;
+      const totalW = BLOSSOMS.length * r * 2 + (BLOSSOMS.length - 1) * gap;
+      let x = W / 2 - totalW / 2 + r;
+      const y = 92;
+      for (const def of BLOSSOMS) {
+        const complete = !!state.used[def.key];
         ctx.save();
-        ctx.fillStyle = p.id === myId ? "rgba(163,231,221,0.24)" : "rgba(8,20,30,0.36)";
-        drawRoundRect(x, 82, 72, 28, 14);
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = complete ? def.color : "rgba(216,242,255,0.14)";
         ctx.fill();
-        ctx.strokeStyle = "rgba(216,242,255,0.16)";
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = complete ? "rgba(255,255,255,0.78)" : "rgba(216,242,255,0.32)";
         ctx.stroke();
-        ctx.fillStyle = p.color || "#8ce8bc";
-        ctx.beginPath(); ctx.arc(x + 18, 96, 10, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#10202b";
-        ctx.font = "13px serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(p.icon || "●", x + 18, 96);
-        ctx.fillStyle = "#eafff8";
-        ctx.font = "800 13px system-ui, sans-serif";
-        ctx.fillText(String(count), x + 48, 96);
         ctx.restore();
-        x += 82;
+        x += r * 2 + gap;
       }
     }
 
@@ -1393,13 +1384,26 @@
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(angle);
-      const flap = Math.sin(now() / 340 + x * 0.02) * 0.18;
+      const flap = (Math.sin(now() / 90 + x * 0.03 + y * 0.02) + 1) / 2;
+      const wingH = s * (0.20 + flap * 0.28);
+      const wingY = s * (0.15 + flap * 0.16);
       ctx.fillStyle = "rgba(255,218,149,0.58)";
-      ctx.beginPath(); ctx.ellipse(-s * 0.38, -s * 0.02, s * 0.46, s * 0.28, -0.72 - flap, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(s * 0.38, -s * 0.02, s * 0.46, s * 0.28, 0.72 + flap, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-s * 0.04, -wingY, s * 0.42, wingH, -0.42, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-s * 0.04, wingY, s * 0.42, wingH, 0.42, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,170,113,0.42)";
+      ctx.beginPath(); ctx.ellipse(-s * 0.22, -wingY * 0.74, s * 0.24, wingH * 0.62, -0.28, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-s * 0.22, wingY * 0.74, s * 0.24, wingH * 0.62, 0.28, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = "rgba(64,57,47,0.68)";
       ctx.lineWidth = Math.max(0.4, s * 0.06);
-      ctx.beginPath(); ctx.moveTo(0, -s * 0.32); ctx.lineTo(0, s * 0.42); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-s * 0.46, 0); ctx.lineTo(s * 0.42, 0); ctx.stroke();
+      ctx.fillStyle = "rgba(51,46,38,0.78)";
+      ctx.beginPath(); ctx.arc(s * 0.52, 0, s * 0.12, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(64,57,47,0.48)";
+      ctx.lineWidth = Math.max(0.3, s * 0.035);
+      ctx.beginPath();
+      ctx.moveTo(s * 0.58, -s * 0.04); ctx.lineTo(s * 0.76, -s * 0.18);
+      ctx.moveTo(s * 0.58, s * 0.04); ctx.lineTo(s * 0.76, s * 0.18);
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -1682,7 +1686,7 @@
       else if (e.type === "turtle") drawMiniTurtle(p.x, p.y, size * e.radius * 0.92, angle);
       else if (e.type === "shadow") drawFishShadow(p.x, p.y, size * e.radius, angle);
       else if (e.bugKind === "dragonfly") drawMiniDragonfly(p.x, p.y, size * e.radius, (e.landedOn ? e.angle + ui.view.rot : angle + Math.PI / 2), !e.landedOn);
-      else drawMiniButterfly(p.x, p.y, size * e.radius, angle);
+      else drawMiniButterfly(p.x, p.y, size * e.radius, (e.angle || angle) + ui.view.rot);
     }
 
     function drawBoardTile(tile, rot, cx, cy, size, alpha, owner) {
