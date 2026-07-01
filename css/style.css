@@ -7,6 +7,14 @@
   --muted: #9a9ab5;
 }
 
+.leave-top-btn {
+  order: -2;
+  background: rgba(255, 93, 93, 0.14);
+  color: #ffd6d6;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
@@ -51,7 +59,7 @@ input, textarea, select {
 
 .title { font-size: 2.4rem; margin: 0; letter-spacing: -1px; }
 .title span { color: var(--accent); }
-.menu-version { color: var(--muted); font-size: 0.78rem; margin: -10px 0 0; }
+.menu-version { color: var(--muted); font-size: 0.78rem; margin: 0; }
 .tagline { color: var(--muted); margin: 0 0 12px; }
 
 /* ===== Buttons ===== */
@@ -667,10 +675,10 @@ input, textarea, select {
   z-index: 100;
   background: var(--bg);
   overflow-y: auto;
-  padding: 24px 20px;
+  padding: max(18px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 14px;
   transform: translateX(100%);
   transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
@@ -687,6 +695,17 @@ input, textarea, select {
 }
 .sheet-header h2 { margin: 0; font-size: 1.2rem; }
 
+.profile-edit-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #2c2c44;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(28, 28, 46, 0.86), rgba(12, 20, 32, 0.72));
+}
+
 .app-update-group {
   padding: 14px;
   border: 1px solid #2c2c44;
@@ -700,6 +719,14 @@ input, textarea, select {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.version-row .menu-version {
+  font-weight: 800;
+}
+
+.version-row .manage-btn {
+  flex: 1 1 210px;
 }
 
 .btn-small {
@@ -749,6 +776,62 @@ input, textarea, select {
 .preview-name {
   font-size: 1.1rem;
   font-weight: 600;
+}
+
+.profile-name-field { min-width: 0; }
+.profile-compact-field { align-items: center; }
+
+.profile-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #2c2c44;
+  border-radius: 16px;
+  background: rgba(28, 28, 46, 0.42);
+}
+
+.profile-shortcuts h3 {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.shortcut-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.color-shortcut,
+.icon-shortcut {
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.color-shortcut {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16) inset;
+}
+
+.icon-shortcut {
+  min-width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1.25rem;
+}
+
+.color-shortcut.selected,
+.icon-shortcut.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .field-group {
@@ -813,12 +896,19 @@ input, textarea, select {
 
 .online-player-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 10px;
   padding: 8px;
   border-radius: 12px;
   background: rgba(8, 20, 30, 0.28);
+}
+
+.online-player-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .online-player-avatar {
@@ -864,10 +954,35 @@ input, textarea, select {
   cursor: pointer;
 }
 
+.online-join-btn {
+  min-height: 34px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.online-join-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .lobby-controls {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.lobby-controls h3 {
+  margin: 4px 0 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
 .lobby-controls.hidden { display: none; }
@@ -1180,4 +1295,12 @@ input, textarea, select {
 @media (max-width: 560px) {
   .flower-lobby-list { grid-template-columns: 1fr; }
   .screen { padding: 18px; }
+  .profile-edit-card {
+    grid-template-columns: auto 1fr auto;
+    align-items: end;
+  }
+  .profile-name-field { grid-column: 2 / -1; }
+  .profile-compact-field { align-items: stretch; }
+  .profile-color-input { width: 52px; }
+  .emoji-input { width: 58px; }
 }

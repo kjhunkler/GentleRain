@@ -15,7 +15,6 @@
     <section id="screen-loading" class="screen active">
       <div id="home-online-pads" class="online-lily-row" aria-label="Online players"></div>
       <h1 class="title">Simple<span>Rain</span></h1>
-      <p id="menu-version" class="menu-version"></p>
       <p class="tagline">A quiet pond game for solo play or shared lobbies.</p>
       <p id="connection-status" class="status">Choose how to play.</p>
       <div id="home-lobby-controls" class="home-lobby-controls">
@@ -35,10 +34,6 @@
             <button id="btn-home-join-lobby" class="btn" type="button">Join/Host</button>
           </div>
         </section>
-        <section class="home-section" aria-labelledby="app-cache-title">
-          <h2 id="app-cache-title">App Cache</h2>
-          <button id="btn-refresh-cache" class="btn" type="button">Refresh Cached PWA Files</button>
-        </section>
       </div>
       <button id="btn-home-profile" class="profile-menu-btn home-profile-btn" aria-label="Edit profile" type="button">
         <span id="home-profile-dot" class="menu-profile-dot"></span>
@@ -47,6 +42,7 @@
 
     <section id="screen-play" class="screen">
       <div class="play-menu-bar" aria-label="SimpleRain controls">
+        <button id="btn-leave-lobby-top" class="menu-icon-btn leave-top-btn" aria-label="Leave lobby" type="button">←</button>
         <ul id="player-list" class="player-list"></ul>
         <button id="btn-profile" class="profile-menu-btn" aria-label="Edit profile" type="button">
           <span id="menu-profile-dot" class="menu-profile-dot"></span>
@@ -58,26 +54,33 @@
 
   <div id="sheet-profile" class="sheet" aria-hidden="true">
     <div class="sheet-header">
-      <h2>Profile</h2>
+      <h2>Settings</h2>
       <button id="btn-close-profile" class="close-btn" aria-label="Close" type="button">x</button>
     </div>
-    <div class="profile-preview-row">
+    <div class="profile-edit-card">
       <div class="profile-preview-main">
         <div id="preview-dot" class="preview-dot"></div>
-        <span id="preview-name" class="preview-name"></span>
+      </div>
+      <div class="field-group profile-name-field">
+        <label for="input-name">Name</label>
+        <input id="input-name" type="text" class="text-input" maxlength="20" autocomplete="off" />
+      </div>
+      <div class="field-group profile-compact-field">
+        <label for="input-color">Color</label>
+        <input id="input-color" class="profile-color-input" type="color" />
+      </div>
+      <div class="field-group profile-compact-field">
+        <label for="input-icon">Icon</label>
+        <input id="input-icon" type="text" class="text-input emoji-input" maxlength="8" autocomplete="off" inputmode="text" />
       </div>
     </div>
-    <div class="field-group">
-      <label for="input-name">Name</label>
-      <input id="input-name" type="text" class="text-input" maxlength="20" autocomplete="off" />
+    <div class="profile-shortcuts">
+      <h3>Quick Colors</h3>
+      <div id="profile-color-shortcuts" class="shortcut-row"></div>
     </div>
-    <div class="field-group">
-      <label for="input-color">Color</label>
-      <input id="input-color" class="profile-color-input" type="color" />
-    </div>
-    <div class="field-group">
-      <label for="input-icon">Emoji</label>
-      <input id="input-icon" type="text" class="text-input emoji-input" maxlength="8" autocomplete="off" inputmode="text" />
+    <div class="profile-shortcuts">
+      <h3>Pond Friends</h3>
+      <div id="profile-icon-shortcuts" class="shortcut-row"></div>
     </div>
     <div class="manage-group">
       <h3>Online Players</h3>
@@ -101,6 +104,11 @@
             <button id="btn-share-invite" class="manage-btn" type="button">Share via Text</button>
           </div>
         </div>
+        <button id="btn-request-host" class="manage-btn" type="button">Request Host</button>
+        <button id="btn-relinquish-host" class="manage-btn hidden" type="button">Relinquish Host</button>
+      </div>
+      <div id="lobby-options-controls" class="lobby-controls">
+        <h3>Other Options</h3>
         <button id="btn-music" class="manage-btn" aria-label="Mute music" type="button" aria-pressed="false">Music On</button>
         <button id="btn-reset" class="manage-btn" type="button">Reset Game</button>
         <button id="btn-leave-lobby" class="manage-btn danger" type="button">Leave Lobby</button>
@@ -116,11 +124,17 @@
         <button id="btn-join-lobby" class="manage-btn" type="button">Join Invite Code</button>
       </div>
     </div>
+    <div class="manage-group app-update-group">
+      <div class="version-row">
+        <span id="menu-version" class="menu-version"></span>
+        <button id="btn-refresh-cache" class="manage-btn" type="button">Refresh Cached PWA Files</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="js/peer-net.js?v=1.1.6"></script>
-  <script src="js/games/simple-rain.js?v=1.1.6"></script>
-  <script src="js/app.js?v=1.1.6"></script>
+  <script src="js/peer-net.js?v=1.1.7"></script>
+  <script src="js/games/simple-rain.js?v=1.1.7"></script>
+  <script src="js/app.js?v=1.1.7"></script>
 </body>
 </html>

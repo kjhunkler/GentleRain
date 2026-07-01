@@ -1,6 +1,6 @@
 /* SimpleRain app shell: auto host/join, profile editing, host-owned game state. */
 
-const APP_VERSION = "1.1.6";
+const APP_VERSION = "1.1.7";
 const AUTO_CHANNEL = "simple-rain";
 const GAME_SAVE_KEY = "simplerain-host-cache";
 const MUSIC_MUTED_KEY = "simplerain-music-muted";
@@ -17,7 +17,9 @@ const HOST_WATCHDOG_MS = 15000;
 const CLIENT_WELCOME_TIMEOUT_MS = 10000;
 const COLORS = ["#ff5d5d", "#ff9d4d", "#ffd24d", "#7CFC9B", "#33ddaa", "#4dd2ff", "#4d8bff", "#7766ff", "#c98cff", "#ff6fd0", "#22cc88", "#ff6600"];
 const ICONS = ["🐸", "🐢", "🐟", "🦆", "🦋", "🐞", "🐝", "🦗", "🦎", "🐌", "🦀", "🦊", "🐰", "🦝", "🦉", "🐿️"];
+const POND_ICON_SUGGESTIONS = ["🐸", "🐢", "🐟", "🦆", "🦋", "🐞", "🐝", "🦗", "🦎", "🐌", "🦀", "🐿️"];
 const INVITE_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const HOST_REQUEST_COOLDOWN_MS = 60000;
 const FLOWER_LOBBIES = [
   { key: "lotus", name: "Lotus", art: "lotus", color: "#f4a6cf" },
   { key: "iris", name: "Iris", art: "iris", color: "#a993ff" },
@@ -51,6 +53,7 @@ let lastState = [];
 let lastHostOrder = [];
 let pendingGameState = null;
 let migratingFromHostId = null;
+let preferredNextHostId = null;
 let handoffInProgress = false;
 let statusText = "Starting SimpleRain...";
 let myColor = "";
@@ -64,6 +67,7 @@ let hostReachability = "solo";
 let lobbyScanToken = 0;
 let lastLobbyRefreshAttemptAt = 0;
 let pendingInvites = [];
+let lastHostRequestAt = 0;
 
 const players = new Map();
 const peerMap = new Map();
@@ -88,6 +92,76 @@ function initialLobbyChannel() {
     return lobby ? normalizeLobbyChannel(lobby) : "";
   } catch {
     return "";
+  }
+  renderProfileShortcuts();
+}
+
+function applyProfileColor(color) {
+  profile.color = color || COLORS[0];
+  if (!inLobby) myColor = profile.color;
+  localStorage.setItem("simplerain-color", profile.color);
+  profiles.set(MY_ID, { ...profiles.get(MY_ID), color: profile.color });
+  const input = $("#input-color");
+  if (input) input.value = profile.color;
+  updateProfilePreview();
+  broadcastProfile();
+}
+
+function applyProfileIcon(icon) {
+  profile.icon = icon || randomIcon();
+  localStorage.setItem("simplerain-icon", profile.icon);
+  profiles.set(MY_ID, { ...profiles.get(MY_ID), icon: profile.icon });
+  const input = $("#input-icon");
+  if (input) input.value = profile.icon;
+  updateProfilePreview();
+  broadcastProfile();
+}
+
+function renderProfileShortcuts() {
+  const colors = $("#profile-color-shortcuts");
+  if (colors) {
+    colors.innerHTML = "";
+    for (const color of COLORS) {
+      const button = document.createElement("button");
+      button.className = "color-shortcut";
+      button.classList.toggle("selected", (profile.color || myColor) === color);
+      button.type = "button";
+      button.style.background = color;
+      button.setAttribute("aria-label", `Use color ${color}`);
+      button.onclick = () => applyProfileColor(color);
+      colors.appendChild(button);
+    }
+  }
+
+function requestHostRole() {
+  if (!inLobby || soloMode || net.isHost) return;
+  const now = Date.now();
+  const remaining = HOST_REQUEST_COOLDOWN_MS - (now - lastHostRequestAt);
+  if (remaining > 0) {
+    setStatus(`Wait ${Math.ceil(remaining / 1000)}s before requesting host again.`);
+    return;
+  }
+  lastHostRequestAt = now;
+  net.send({ t: "host-request", id: MY_ID, name: profile.name });
+  setStatus("Host request sent.");
+}
+
+function relinquishHostRole() {
+  if (!inLobby || soloMode || !net.isHost) return;
+  beginHostHandoff("Relinquishing host...");
+}
+  const icons = $("#profile-icon-shortcuts");
+  if (icons) {
+    icons.innerHTML = "";
+    for (const icon of POND_ICON_SUGGESTIONS) {
+      const button = document.createElement("button");
+      button.className = "icon-shortcut";
+      button.classList.toggle("selected", profile.icon === icon);
+      button.type = "button";
+      button.textContent = icon;
+      button.onclick = () => applyProfileIcon(icon);
+      icons.appendChild(button);
+    }
   }
 }
 
@@ -255,15 +329,20 @@ function renderPresence() {
   for (const entry of entries) {
     const row = document.createElement("div");
     row.className = "online-player-row";
+    const canJoin = !!entry.lobby;
     row.innerHTML = `
       <span class="online-player-avatar" style="background:${esc(entry.color || COLORS[0])}">${esc(displayIcon(entry.icon))}</span>
       <span class="online-player-main">
         <span class="online-player-name">${esc(entry.name)}</span>
         <span class="online-player-status">${esc(presenceStatusText(entry))}</span>
       </span>
-      <button class="online-invite-btn" type="button">Invite</button>
+      <span class="online-player-actions">
+        <button class="online-join-btn" type="button" ${canJoin ? "" : "disabled"}>Join</button>
+        <button class="online-invite-btn" type="button">Invite</button>
+      </span>
     `;
-    row.querySelector("button").onclick = () => invitePresencePlayer(entry.id);
+    row.querySelector(".online-join-btn").onclick = () => joinPresencePlayer(entry.id);
+    row.querySelector(".online-invite-btn").onclick = () => invitePresencePlayer(entry.id);
     list.appendChild(row);
   }
 }
@@ -306,6 +385,13 @@ function invitePresencePlayer(toId) {
   };
   sendPresenceInvite(invite);
   setStatus(`Invited ${entry.name} to ${invite.lobbyName}.`);
+}
+
+function joinPresencePlayer(toId) {
+  const entry = presenceRoster.get(toId);
+  if (!entry?.lobby) return;
+  closeProfileSheet();
+  connectToLobby(entry.lobby, false, false);
 }
 
 function sendPresenceInvite(invite) {
@@ -568,6 +654,7 @@ function updateLobbyControls() {
   if (code && !code.value) code.value = sessionChannel;
   const homeCode = $("#input-home-lobby-code");
   if (homeCode && !homeCode.value && sessionChannel) homeCode.value = sessionChannel;
+  updateHostControlButtons();
 }
 
 function lobbyInfoPayload() {
@@ -820,6 +907,12 @@ function wireManageControls() {
   if (music) music.onclick = toggleMusicMute;
   const leave = $("#btn-leave-lobby");
   if (leave) leave.onclick = leaveLobby;
+  const leaveTop = $("#btn-leave-lobby-top");
+  if (leaveTop) leaveTop.onclick = leaveLobby;
+  const requestHost = $("#btn-request-host");
+  if (requestHost) requestHost.onclick = requestHostRole;
+  const relinquishHost = $("#btn-relinquish-host");
+  if (relinquishHost) relinquishHost.onclick = relinquishHostRole;
   const copy = $("#btn-copy-invite");
   if (copy) copy.onclick = copyInviteLink;
   const share = $("#btn-share-invite");
@@ -840,6 +933,14 @@ function wireManageControls() {
   if (join) join.onclick = joinLobbyFromCode;
   const homeJoin = $("#btn-home-join-lobby");
   if (homeJoin) homeJoin.onclick = joinLobbyFromHomeCode;
+}
+
+function updateHostControlButtons() {
+  const request = $("#btn-request-host");
+  const relinquish = $("#btn-relinquish-host");
+  const showHostTools = inLobby && !soloMode;
+  request?.classList.toggle("hidden", !showHostTools || net.isHost);
+  relinquish?.classList.toggle("hidden", !showHostTools || !net.isHost);
 }
 
 function startGame(initialState = null) {
@@ -1035,6 +1136,8 @@ function openProfileSheet() {
   updateMusicButton();
   updateInvitePanel();
   updateLobbyControls();
+  updateHostControlButtons();
+  renderProfileShortcuts();
   wireManageControls();
   $("#sheet-profile")?.classList.add("open");
 }
@@ -1186,9 +1289,12 @@ function beginHostHandoff(message) {
   handoffInProgress = true;
   clearClientWelcomeTimer();
   setStatus(message);
-  migratingFromHostId = lastHostOrder[0] || null;
+  migratingFromHostId = net.isHost ? MY_ID : lastHostOrder[0] || null;
   pendingGameState = snapshotGame() || loadCachedGameState();
-  const remainingOrder = migratingFromHostId ? lastHostOrder.filter((id) => id !== migratingFromHostId) : [MY_ID];
+  let remainingOrder = migratingFromHostId ? lastHostOrder.filter((id) => id !== migratingFromHostId) : [MY_ID];
+  if (preferredNextHostId && remainingOrder.includes(preferredNextHostId)) {
+    remainingOrder = [preferredNextHostId, ...remainingOrder.filter((id) => id !== preferredNextHostId)];
+  }
   const myIndex = remainingOrder.indexOf(MY_ID);
   const preferHost = myIndex === 0;
   const delay = myIndex < 0 ? 300 : myIndex * 700;
@@ -1196,6 +1302,13 @@ function beginHostHandoff(message) {
   stopHostThrottleMonitor();
   stopHostWatchdog();
   clearHandoffTimer();
+  const state = snapshotGame();
+  if (state) {
+    pendingGameState = state;
+    saveCachedGameState(state);
+    broadcastGameState(state);
+  }
+  if (net.isHost) net.broadcast({ t: "host-relinquish", fromId: MY_ID, state: pendingGameState, hostOrder: remainingOrder });
   handoffTimer = setTimeout(() => net.migrate(sessionChannel, preferHost), delay);
 }
 
@@ -1239,6 +1352,7 @@ function wireNetEvents() {
     }
     addPlayer(MY_ID, profile.name, null, profile.icon, profile.color);
     migratingFromHostId = null;
+    preferredNextHostId = null;
     lastState = [...players.values()];
     lastHostOrder = [...players.keys()];
     startHostLoop();
@@ -1347,6 +1461,15 @@ function handleHostMessage(peerId, msg) {
     const state = snapshotGame();
     saveCachedGameState(state);
     broadcastGameState(state);
+  } else if (msg.t === "host-request") {
+    const requester = peerMap.get(peerId);
+    if (!requester) return;
+    const state = snapshotGame();
+    if (state) broadcastGameState(state);
+    preferredNextHostId = requester;
+    lastHostOrder = [MY_ID, requester, ...lastHostOrder.filter((id) => id !== MY_ID && id !== requester)];
+    net.broadcast({ t: "players", players: [...players.values()], hostOrder: lastHostOrder });
+    beginHostHandoff(`${msg.name || "A player"} requested host. Rejoining...`);
   }
 }
 
@@ -1389,6 +1512,10 @@ function handleClientMessage(msg) {
     handleGameState(msg.state);
   } else if (msg.t === "host-exiting") {
     beginHostHandoff("Host left. Rejoining...");
+  } else if (msg.t === "host-relinquish") {
+    if (msg.state) handleGameState(msg.state);
+    if (msg.hostOrder) lastHostOrder = msg.hostOrder;
+    beginHostHandoff("Host is transferring. Rejoining...");
   }
 }
 
@@ -1491,12 +1618,7 @@ $("#input-name")?.addEventListener("input", (event) => {
   nameTimer = setTimeout(broadcastProfile, 350);
 });
 $("#input-color")?.addEventListener("input", (event) => {
-  profile.color = event.target.value || COLORS[0];
-  if (!inLobby) myColor = profile.color;
-  localStorage.setItem("simplerain-color", profile.color);
-  profiles.set(MY_ID, { ...profiles.get(MY_ID), color: profile.color });
-  updateProfilePreview();
-  broadcastProfile();
+  applyProfileColor(event.target.value || COLORS[0]);
 });
 $("#input-icon")?.addEventListener("input", (event) => {
   const emoji = firstEmoji(event.target.value);
@@ -1505,11 +1627,7 @@ $("#input-icon")?.addEventListener("input", (event) => {
     return;
   }
   event.target.value = emoji;
-  profile.icon = emoji;
-  localStorage.setItem("simplerain-icon", emoji);
-  profiles.set(MY_ID, { ...profiles.get(MY_ID), icon: emoji });
-  updateProfilePreview();
-  broadcastProfile();
+  applyProfileIcon(emoji);
 });
 $("#input-home-lobby-code")?.addEventListener("input", (event) => {
   event.target.value = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
