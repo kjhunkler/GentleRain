@@ -1,6 +1,6 @@
 /* SimpleRain app shell: auto host/join, profile editing, host-owned game state. */
 
-const APP_VERSION = "1.1.5";
+const APP_VERSION = "1.1.6";
 const AUTO_CHANNEL = "simple-rain";
 const GAME_SAVE_KEY = "simplerain-host-cache";
 const MUSIC_MUTED_KEY = "simplerain-music-muted";
@@ -84,7 +84,8 @@ function normalizeLobbyChannel(value) {
 function initialLobbyChannel() {
   try {
     const params = new URLSearchParams(location.search);
-    return normalizeLobbyChannel(params.get(LOBBY_PARAM) || "");
+    const lobby = params.get(LOBBY_PARAM);
+    return lobby ? normalizeLobbyChannel(lobby) : "";
   } catch {
     return "";
   }
@@ -202,7 +203,10 @@ function broadcastPresence(force = false) {
   const payload = presencePayload();
   upsertPresence(payload);
   if (!presenceNet.peer || presenceNet._closed) return;
-  if (presenceNet.isHost) presenceNet.broadcast(payload);
+  if (presenceNet.isHost) {
+    presenceNet.broadcast(payload);
+    if (force) broadcastPresenceRoster();
+  }
   else presenceNet.send(payload);
 }
 
@@ -953,6 +957,7 @@ function connectToLobby(channel, preferHost = false, openInviteWhenReady = false
   setStatus(preferHost ? "Hosting a new SimpleRain lobby..." : "Finding a SimpleRain session...");
   broadcastPresence(true);
   net.migrate(sessionChannel, preferHost);
+  setTimeout(() => broadcastPresence(true), 500);
 }
 
 function hostNewLobby() {
