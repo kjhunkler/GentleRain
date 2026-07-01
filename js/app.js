@@ -6,6 +6,7 @@ const GAME_SAVE_KEY = "simplerain-host-cache";
 const MUSIC_MUTED_KEY = "simplerain-music-muted";
 const LOBBY_PARAM = "lobby";
 const LOBBY_SCAN_TIMEOUT_MS = 2600;
+const LOBBY_REFRESH_COOLDOWN_MS = 4000;
 const PLAYER_HEARTBEAT_MS = 15000;
 const HOST_WATCHDOG_MS = Math.max(45000, PLAYER_HEARTBEAT_MS * 3);
 const CLIENT_WELCOME_TIMEOUT_MS = 10000;
@@ -50,6 +51,7 @@ let showInviteAfterReady = false;
 let inLobby = false;
 let soloMode = false;
 let lobbyScanToken = 0;
+let lastLobbyRefreshAttemptAt = 0;
 
 const players = new Map();
 const peerMap = new Map();
@@ -365,6 +367,13 @@ function lobbyInfoSummary(info) {
 }
 
 async function refreshFlowerLobbies() {
+  const now = Date.now();
+  const remaining = LOBBY_REFRESH_COOLDOWN_MS - (now - lastLobbyRefreshAttemptAt);
+  if (remaining > 0) {
+    setStatus(`Please wait ${Math.ceil(remaining / 1000)}s before refreshing lobbies again.`);
+    return;
+  }
+  lastLobbyRefreshAttemptAt = now;
   const token = ++lobbyScanToken;
   const refresh = $("#btn-refresh-lobbies");
   refresh?.setAttribute("disabled", "disabled");
@@ -381,6 +390,14 @@ async function refreshFlowerLobbies() {
   }
   refresh?.removeAttribute("disabled");
   setStatus("Choose how to play.");
+}
+
+function enterHomeScreen(refreshLobbies = true) {
+  show("loading");
+  setStatus("Choose how to play.");
+  updateLobbyControls();
+  updateContinueButton();
+  if (refreshLobbies) refreshFlowerLobbies();
 }
 
 async function copyInviteLink() {
@@ -551,10 +568,7 @@ function leaveLobby() {
   sessionChannel = "";
   showInviteAfterReady = false;
   updateLobbyUrl();
-  setStatus("Choose how to play.");
-  show("loading");
-  updateLobbyControls();
-  updateContinueButton();
+  enterHomeScreen(true);
   closeProfileSheet();
 }
 
@@ -1069,8 +1083,6 @@ wireManageControls();
 
 wireNetEvents();
 registerServiceWorker();
-show("loading");
 renderFlowerLobbies();
-setStatus("Choose how to play.");
-refreshFlowerLobbies();
+enterHomeScreen(true);
 render();
