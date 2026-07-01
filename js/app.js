@@ -7,6 +7,9 @@ const MUSIC_MUTED_KEY = "simplerain-music-muted";
 const LOBBY_PARAM = "lobby";
 const LOBBY_SCAN_TIMEOUT_MS = 2600;
 const LOBBY_REFRESH_COOLDOWN_MS = 4000;
+const PRESENCE_CHANNEL = `${AUTO_CHANNEL}-presence`;
+const PRESENCE_HEARTBEAT_MS = 10000;
+const PRESENCE_STALE_MS = 35000;
 const PLAYER_HEARTBEAT_MS = 5000;
 const HOST_THROTTLE_CHECK_MS = 5000;
 const HOST_THROTTLE_DRIFT_MS = 12000;
@@ -32,10 +35,13 @@ const canvas = $("#stage");
 const ctx = canvas.getContext("2d");
 
 let net = new PeerNet();
+let presenceNet = new PeerNet();
 let activeGame = null;
 let hostLoopTimer = null;
 let hostWatchdogTimer = null;
 let hostThrottleTimer = null;
+let presenceTimer = null;
+let presenceSweepTimer = null;
 let hostThrottleExpectedAt = 0;
 let handoffTimer = null;
 let clientWelcomeTimer = null;
@@ -57,10 +63,13 @@ let soloMode = false;
 let hostReachability = "solo";
 let lobbyScanToken = 0;
 let lastLobbyRefreshAttemptAt = 0;
+let pendingInvites = [];
 
 const players = new Map();
 const peerMap = new Map();
 const profiles = new Map();
+const presenceRoster = new Map();
+const presencePeerMap = new Map();
 let usedColors = new Set();
 
 function normalizeLobbyChannel(value) {
@@ -126,6 +135,7 @@ function broadcastPlayers(force = false) {
   lastPlayersBroadcastAt = now;
   net.broadcast({ t: "players", players: state, hostOrder });
   renderPlayers();
+  broadcastPresence(false);
 }
 
 function randomIcon() {
@@ -150,6 +160,237 @@ const profile = {
 };
 myColor = profile.color || COLORS[0];
 profiles.set(MY_ID, { name: profile.name, icon: profile.icon, color: myColor });
+
+function currentPresenceStatus() {
+  if (soloMode) return "solo";
+  if (inLobby && net.isHost) return "hosting";
+  if (inLobby) return "joined";
+  return "home";
+}
+
+function lobbyDisplayName(channel = sessionChannel) {
+  if (!channel) return "";
+  return FLOWER_LOBBIES.find((lobby) => flowerLobbyChannel(lobby) === channel)?.name || channel.toUpperCase();
+}
+
+function presencePayload() {
+  return {
+    t: "presence-update",
+    id: MY_ID,
+    name: profile.name,
+    icon: profile.icon,
+    color: profile.color || myColor || COLORS[0],
+    status: currentPresenceStatus(),
+    lobby: inLobby && sessionChannel ? sessionChannel : "",
+    lobbyName: inLobby && sessionChannel ? lobbyDisplayName(sessionChannel) : "",
+    updatedAt: Date.now(),
+  };
+}
+
+function upsertPresence(entry) {
+  if (!entry?.id) return;
+  presenceRoster.set(entry.id, { ...presenceRoster.get(entry.id), ...entry, updatedAt: Date.now() });
+  renderPresence();
+}
+
+function broadcastPresence(force = false) {
+  const payload = presencePayload();
+  upsertPresence(payload);
+  if (!presenceNet.peer || presenceNet._closed) return;
+  if (presenceNet.isHost) presenceNet.broadcast(payload);
+  else presenceNet.send(payload);
+}
+
+function presenceStatusText(entry) {
+  if (entry.status === "hosting") return `Hosting ${entry.lobbyName || "a lobby"}`;
+  if (entry.status === "joined") return `In ${entry.lobbyName || "a lobby"}`;
+  if (entry.status === "solo") return "Playing solo";
+  return "On the home screen";
+}
+
+function renderPresence() {
+  const entries = [...presenceRoster.values()]
+    .filter((entry) => entry.id !== MY_ID)
+    .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const home = $("#home-online-pads");
+  if (home) {
+    home.innerHTML = "";
+    if (!entries.length) {
+      const empty = document.createElement("span");
+      empty.className = "online-lily-empty";
+      empty.textContent = "No friends online yet";
+      home.appendChild(empty);
+    } else {
+      for (const entry of entries.slice(0, 10)) {
+        const button = document.createElement("button");
+        button.className = "online-lily-pad";
+        button.type = "button";
+        button.title = `${entry.name} - ${presenceStatusText(entry)}`;
+        button.innerHTML = `<span class="online-lily-icon">${esc(displayIcon(entry.icon))}</span><span class="online-lily-name">${esc(entry.name)}</span>`;
+        button.onclick = () => invitePresencePlayer(entry.id);
+        home.appendChild(button);
+      }
+    }
+  }
+
+  const list = $("#sheet-online-players");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!entries.length) {
+    const empty = document.createElement("p");
+    empty.className = "lobby-left-message";
+    empty.textContent = "No other players are online.";
+    list.appendChild(empty);
+    return;
+  }
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    row.className = "online-player-row";
+    row.innerHTML = `
+      <span class="online-player-avatar" style="background:${esc(entry.color || COLORS[0])}">${esc(displayIcon(entry.icon))}</span>
+      <span class="online-player-main">
+        <span class="online-player-name">${esc(entry.name)}</span>
+        <span class="online-player-status">${esc(presenceStatusText(entry))}</span>
+      </span>
+      <button class="online-invite-btn" type="button">Invite</button>
+    `;
+    row.querySelector("button").onclick = () => invitePresencePlayer(entry.id);
+    list.appendChild(row);
+  }
+}
+
+function presenceRosterMessage() {
+  return { t: "presence-roster", entries: [...presenceRoster.values()] };
+}
+
+function broadcastPresenceRoster() {
+  if (!presenceNet.isHost) return;
+  presenceNet.broadcast(presenceRosterMessage());
+}
+
+function inviteLobbyChannel() {
+  if (inLobby && sessionChannel) return sessionChannel;
+  const input = $("#input-home-lobby-code");
+  const channel = normalizeLobbyChannel(input?.value || newLobbyChannel());
+  if (input) input.value = channel.toUpperCase().slice(0, 4);
+  clearCachedGameState();
+  pendingGameState = null;
+  activeGame?.destroy?.();
+  activeGame = null;
+  connectToLobby(channel, true, true);
+  return channel;
+}
+
+function invitePresencePlayer(toId) {
+  const entry = presenceRoster.get(toId);
+  if (!entry) return;
+  const channel = inviteLobbyChannel();
+  const invite = {
+    t: "presence-invite",
+    toId,
+    fromId: MY_ID,
+    fromName: profile.name,
+    fromIcon: profile.icon,
+    lobby: channel,
+    lobbyName: lobbyDisplayName(channel),
+    sentAt: Date.now(),
+  };
+  sendPresenceInvite(invite);
+  setStatus(`Invited ${entry.name} to ${invite.lobbyName}.`);
+}
+
+function sendPresenceInvite(invite) {
+  if (presenceNet.isHost) {
+    if (invite.toId === MY_ID) handlePresenceInvite(invite);
+    const peerId = presencePeerMap.get(invite.toId);
+    if (peerId) presenceNet.sendTo(peerId, invite);
+  } else {
+    presenceNet.send(invite);
+  }
+}
+
+function handlePresenceInvite(invite) {
+  if (!invite || invite.toId !== MY_ID) return;
+  pendingInvites.push(invite);
+  const join = confirm(`${invite.fromName || "Someone"} invited you to ${invite.lobbyName || invite.lobby}. Join now?`);
+  if (join) connectToLobby(invite.lobby, false, false);
+}
+
+function sweepPresenceRoster() {
+  const now = Date.now();
+  let changed = false;
+  for (const [id, entry] of presenceRoster) {
+    if (id === MY_ID) continue;
+    if (now - (entry.updatedAt || 0) <= PRESENCE_STALE_MS) continue;
+    presenceRoster.delete(id);
+    presencePeerMap.delete(id);
+    changed = true;
+  }
+  if (changed) {
+    renderPresence();
+    broadcastPresenceRoster();
+  }
+}
+
+function startPresenceTimers() {
+  clearInterval(presenceTimer);
+  clearInterval(presenceSweepTimer);
+  broadcastPresence(true);
+  presenceTimer = setInterval(() => broadcastPresence(false), PRESENCE_HEARTBEAT_MS);
+  presenceSweepTimer = setInterval(sweepPresenceRoster, PRESENCE_HEARTBEAT_MS);
+}
+
+function wirePresenceEvents() {
+  presenceNet.on("ready", () => {
+    presencePeerMap.clear();
+    upsertPresence(presencePayload());
+    startPresenceTimers();
+    broadcastPresenceRoster();
+  });
+
+  presenceNet.on("connected", () => {
+    startPresenceTimers();
+  });
+
+  presenceNet.on("peer-leave", (peerId) => {
+    for (const [id, mappedPeerId] of presencePeerMap) {
+      if (mappedPeerId !== peerId) continue;
+      presencePeerMap.delete(id);
+      presenceRoster.delete(id);
+    }
+    renderPresence();
+    broadcastPresenceRoster();
+  });
+
+  presenceNet.on("host-closed", () => {
+    presencePeerMap.clear();
+    presenceNet.migrate(PRESENCE_CHANNEL, false);
+  });
+
+  presenceNet.on("message", ({ from, data }) => {
+    if (data?.t === "presence-update") {
+      if (presenceNet.isHost && from !== "host") {
+        presencePeerMap.set(data.id, from);
+        upsertPresence(data);
+        presenceNet.sendTo(from, presenceRosterMessage());
+        broadcastPresenceRoster();
+      } else {
+        upsertPresence(data);
+      }
+    } else if (data?.t === "presence-roster") {
+      for (const entry of data.entries || []) upsertPresence(entry);
+    } else if (data?.t === "presence-invite") {
+      if (presenceNet.isHost && data.toId !== MY_ID) {
+        const peerId = presencePeerMap.get(data.toId);
+        if (peerId) presenceNet.sendTo(peerId, data);
+      } else {
+        handlePresenceInvite(data);
+      }
+    }
+  });
+
+  presenceNet.on("error", (err) => console.warn("Presence connection issue", err));
+}
 
 function show(name) {
   for (const key in screens) screens[key].classList.toggle("active", key === name);
@@ -443,6 +684,7 @@ function enterHomeScreen(refreshLobbies = true) {
   updateLobbyControls();
   updateContinueButton();
   if (refreshLobbies) refreshFlowerLobbies();
+  broadcastPresence(false);
 }
 
 async function copyInviteLink() {
@@ -586,6 +828,7 @@ function startLocalGame(initialState, fresh, status) {
   renderPlayers();
   show("play");
   setStatus(status);
+  broadcastPresence(true);
 }
 
 function leaveLobby() {
@@ -617,6 +860,7 @@ function leaveLobby() {
   showInviteAfterReady = false;
   updateLobbyUrl();
   enterHomeScreen(true);
+  broadcastPresence(true);
   closeProfileSheet();
 }
 
@@ -635,6 +879,7 @@ function connectToLobby(channel, preferHost = false, openInviteWhenReady = false
   updateLobbyControls();
   show("loading");
   setStatus(preferHost ? "Hosting a new SimpleRain lobby..." : "Finding a SimpleRain session...");
+  broadcastPresence(true);
   net.migrate(sessionChannel, preferHost);
 }
 
@@ -752,6 +997,7 @@ function broadcastProfile() {
     profiles.set(MY_ID, { name: me.name, color: me.color, icon: me.icon });
     activeGame?.onPlayerList?.();
     renderPlayers();
+    broadcastPresence(true);
     return;
   }
   if (net.isHost) {
@@ -768,8 +1014,10 @@ function broadcastProfile() {
     broadcastPlayers(true);
     activeGame?.onPlayerList?.();
     renderPlayers();
+    broadcastPresence(true);
   } else {
     net.send({ t: "profile", name: profile.name, icon: profile.icon, preferredColor: profile.color });
+    broadcastPresence(true);
   }
 }
 
@@ -921,6 +1169,7 @@ function wireNetEvents() {
       showInviteAfterReady = false;
       openProfileSheet();
     }
+    broadcastPresence(true);
   });
 
   net.on("connected", () => {
@@ -935,6 +1184,7 @@ function wireNetEvents() {
     startClientWelcomeTimer();
     updateInvitePanel();
     updateLobbyControls();
+    broadcastPresence(true);
   });
 
   net.on("lobby-probe", ({ reply, close }) => {
@@ -1192,8 +1442,10 @@ updateContinueButton();
 wireManageControls();
 
 wireNetEvents();
+wirePresenceEvents();
 wirePageLifecycle();
 registerServiceWorker();
 renderFlowerLobbies();
 enterHomeScreen(true);
+presenceNet.migrate(PRESENCE_CHANNEL, false);
 render();

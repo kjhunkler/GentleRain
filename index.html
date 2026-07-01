@@ -13,6 +13,7 @@
 <body>
   <div id="app">
     <section id="screen-loading" class="screen active">
+      <div id="home-online-pads" class="online-lily-row" aria-label="Online players"></div>
       <h1 class="title">Simple<span>Rain</span></h1>
       <p id="menu-version" class="menu-version"></p>
       <p class="tagline">A quiet pond game for solo play or shared lobbies.</p>
@@ -77,6 +78,10 @@
     <div class="field-group">
       <label for="input-icon">Emoji</label>
       <input id="input-icon" type="text" class="text-input emoji-input" maxlength="8" autocomplete="off" inputmode="text" />
+    </div>
+    <div class="manage-group">
+      <h3>Online Players</h3>
+      <div id="sheet-online-players" class="online-player-list"></div>
     </div>
     <div class="manage-group">
       <h3>Lobby</h3>
