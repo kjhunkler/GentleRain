@@ -19,13 +19,13 @@ const COLORS = ["#ff5d5d", "#ff9d4d", "#ffd24d", "#7CFC9B", "#33ddaa", "#4dd2ff"
 const ICONS = ["🐸", "🐢", "🐟", "🦆", "🦋", "🐞", "🐝", "🦗", "🦎", "🐌", "🦀", "🦊", "🐰", "🦝", "🦉", "🐿️"];
 const INVITE_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const FLOWER_LOBBIES = [
-  { key: "lotus", name: "Lotus", icon: "🪷", color: "#f4a6cf" },
+  { key: "lotus", name: "Lotus", art: "lotus", color: "#f4a6cf" },
   { key: "iris", name: "Iris", art: "iris", color: "#a993ff" },
-  { key: "lily", name: "Lily", icon: "🌸", color: "#f7f0bd" },
-  { key: "clover", name: "Clover", icon: "☘️", color: "#8ce8bc" },
-  { key: "anemone", name: "Anemone", icon: "🌼", color: "#8ed8ff" },
-  { key: "poppy", name: "Poppy", icon: "🌺", color: "#ff9a76" },
-  { key: "aster", name: "Aster", icon: "🌷", color: "#d9a6ff" },
+  { key: "lily", name: "Lily", art: "lily", color: "#f7f0bd" },
+  { key: "clover", name: "Clover", art: "clover", color: "#8ce8bc" },
+  { key: "anemone", name: "Anemone", art: "anemone", color: "#8ed8ff" },
+  { key: "poppy", name: "Poppy", art: "poppy", color: "#ff9a76" },
+  { key: "aster", name: "Aster", art: "aster", color: "#d9a6ff" },
   { key: "orchid", name: "Orchid", art: "orchid", color: "#94d78d" },
 ];
 
@@ -96,7 +96,12 @@ function flowerLobbyChannel(lobby) {
 
 function randomLobbyCode() {
   let code = "";
-  for (let i = 0; i < 4; i++) code += INVITE_CODE_ALPHABET[Math.floor(Math.random() * INVITE_CODE_ALPHABET.length)];
+  const values = new Uint32Array(4);
+  if (crypto?.getRandomValues) crypto.getRandomValues(values);
+  for (let i = 0; i < 4; i++) {
+    const value = values[i] || Math.floor(Math.random() * INVITE_CODE_ALPHABET.length);
+    code += INVITE_CODE_ALPHABET[value % INVITE_CODE_ALPHABET.length];
+  }
   return code;
 }
 
@@ -591,6 +596,19 @@ function lobbyCardMeta(info) {
 }
 
 function flowerArt(lobby) {
+  if (lobby.art === "lotus") {
+    return `
+      <svg class="flower-svg lotus-svg" viewBox="0 0 64 64" aria-hidden="true">
+        <ellipse class="lotus-leaf" cx="21" cy="48" rx="15" ry="7" transform="rotate(-12 21 48)" />
+        <ellipse class="lotus-leaf" cx="43" cy="48" rx="15" ry="7" transform="rotate(12 43 48)" />
+        <path class="lotus-petal" d="M32 8 C24 19 24 31 32 42 C40 31 40 19 32 8 Z" />
+        <path class="lotus-petal" d="M21 17 C19 30 23 39 32 44 C34 31 30 22 21 17 Z" />
+        <path class="lotus-petal" d="M43 17 C45 30 41 39 32 44 C30 31 34 22 43 17 Z" />
+        <path class="lotus-petal lotus-front" d="M32 24 C24 31 22 40 32 51 C42 40 40 31 32 24 Z" />
+        <circle class="flower-center" cx="32" cy="39" r="4" />
+      </svg>
+    `;
+  }
   if (lobby.art === "iris") {
     return `
       <svg class="flower-svg iris-svg" viewBox="0 0 64 64" aria-hidden="true">
@@ -601,6 +619,59 @@ function flowerArt(lobby) {
         <path class="iris-standard" d="M33 31 C44 27 53 18 49 9 C37 10 32 20 33 31 Z" />
         <path class="flower-stem" d="M32 34 C31 43 31 52 32 61" />
         <circle class="flower-center" cx="32" cy="31" r="4" />
+      </svg>
+    `;
+  }
+  if (lobby.art === "lily") {
+    return `
+      <svg class="flower-svg lily-svg" viewBox="0 0 64 64" aria-hidden="true">
+        <path class="lily-petal" d="M32 8 C23 20 24 33 32 42 C40 33 41 20 32 8 Z" />
+        <path class="lily-petal" d="M20 16 C17 29 22 39 32 43 C32 30 28 21 20 16 Z" />
+        <path class="lily-petal" d="M44 16 C47 29 42 39 32 43 C32 30 36 21 44 16 Z" />
+        <path class="lily-petal" d="M13 31 C22 27 31 31 35 42 C22 45 15 40 13 31 Z" />
+        <path class="lily-petal" d="M51 31 C42 27 33 31 29 42 C42 45 49 40 51 31 Z" />
+        <path class="flower-stem" d="M32 39 C31 47 31 54 32 61" />
+        <circle class="flower-center" cx="32" cy="38" r="4" />
+      </svg>
+    `;
+  }
+  if (lobby.art === "clover") {
+    return `
+      <svg class="flower-svg clover-svg" viewBox="0 0 64 64" aria-hidden="true">
+        <path class="clover-leaf" d="M32 30 C20 18 20 7 32 8 C44 7 44 18 32 30 Z" />
+        <path class="clover-leaf" d="M30 32 C18 44 7 44 8 32 C7 20 18 20 30 32 Z" />
+        <path class="clover-leaf" d="M34 32 C46 20 57 20 56 32 C57 44 46 44 34 32 Z" />
+        <path class="clover-leaf" d="M32 34 C44 46 44 57 32 56 C20 57 20 46 32 34 Z" />
+        <path class="flower-stem" d="M34 38 C37 48 34 55 25 61" />
+      </svg>
+    `;
+  }
+  if (lobby.art === "anemone") {
+    return `
+      <svg class="flower-svg anemone-svg" viewBox="0 0 64 64" aria-hidden="true">
+        ${Array.from({ length: 10 }, (_, i) => `<ellipse class="anemone-petal" cx="32" cy="18" rx="6" ry="14" transform="rotate(${i * 36} 32 32)" />`).join("")}
+        <circle class="anemone-center" cx="32" cy="32" r="9" />
+        <circle class="flower-center" cx="32" cy="32" r="4" />
+      </svg>
+    `;
+  }
+  if (lobby.art === "poppy") {
+    return `
+      <svg class="flower-svg poppy-svg" viewBox="0 0 64 64" aria-hidden="true">
+        <path class="poppy-petal" d="M31 31 C17 29 10 18 18 9 C30 6 34 17 31 31 Z" />
+        <path class="poppy-petal" d="M33 31 C47 29 54 18 46 9 C34 6 30 17 33 31 Z" />
+        <path class="poppy-petal" d="M31 33 C17 35 10 46 18 55 C30 58 34 47 31 33 Z" />
+        <path class="poppy-petal" d="M33 33 C47 35 54 46 46 55 C34 58 30 47 33 33 Z" />
+        <circle class="poppy-center" cx="32" cy="32" r="8" />
+        <circle class="flower-center" cx="32" cy="32" r="3" />
+      </svg>
+    `;
+  }
+  if (lobby.art === "aster") {
+    return `
+      <svg class="flower-svg aster-svg" viewBox="0 0 64 64" aria-hidden="true">
+        ${Array.from({ length: 14 }, (_, i) => `<ellipse class="aster-petal" cx="32" cy="15" rx="4" ry="14" transform="rotate(${i * 25.714} 32 32)" />`).join("")}
+        <circle class="flower-center" cx="32" cy="32" r="8" />
       </svg>
     `;
   }
@@ -617,7 +688,7 @@ function flowerArt(lobby) {
       </svg>
     `;
   }
-  return esc(lobby.icon);
+  return "";
 }
 
 function renderFlowerLobbies(results = new Map()) {
@@ -681,6 +752,7 @@ async function refreshFlowerLobbies() {
 function enterHomeScreen(refreshLobbies = true) {
   show("loading");
   setStatus("Choose how to play.");
+  if (!sessionChannel) setHomeInviteCode(randomLobbyCode());
   updateLobbyControls();
   updateContinueButton();
   if (refreshLobbies) refreshFlowerLobbies();
@@ -919,7 +991,13 @@ function joinLobbyFromHomeCode() {
 function initializeHomeInviteCode() {
   const input = $("#input-home-lobby-code");
   if (!input || input.value) return;
-  input.value = sessionChannel ? sessionChannel.toUpperCase().slice(0, 4) : randomLobbyCode();
+  setHomeInviteCode(sessionChannel ? sessionChannel.toUpperCase().slice(0, 4) : randomLobbyCode());
+}
+
+function setHomeInviteCode(code) {
+  const input = $("#input-home-lobby-code");
+  if (!input) return;
+  input.value = String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
 }
 
 function ensureGameStarted(initialState = null) {

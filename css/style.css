@@ -237,8 +237,18 @@ input, textarea, select {
 }
 
 .flower-svg .flower-center { fill: #ffe28f; }
+.lotus-svg .lotus-leaf { fill: #2fa86c; opacity: 0.9; }
+.lotus-svg .lotus-petal { fill: #f6a7d2; stroke: #ffe2f1; stroke-width: 1.2; }
+.lotus-svg .lotus-front { fill: #ffd1e8; }
 .iris-svg .iris-standard { fill: #7d5cff; stroke: #e2d6ff; stroke-width: 1.2; }
 .iris-svg .iris-fall { fill: #b18cff; stroke: #f3e7ff; stroke-width: 1.2; }
+.lily-svg .lily-petal { fill: #fff6c8; stroke: #f0c96a; stroke-width: 1.2; }
+.clover-svg .clover-leaf { fill: #32c878; stroke: #c5ffd9; stroke-width: 1.2; }
+.anemone-svg .anemone-petal { fill: #8ed8ff; stroke: #e5f7ff; stroke-width: 1; opacity: 0.96; }
+.anemone-svg .anemone-center { fill: #263a76; }
+.poppy-svg .poppy-petal { fill: #ff7f5f; stroke: #ffd1c2; stroke-width: 1.2; }
+.poppy-svg .poppy-center { fill: #5d3328; }
+.aster-svg .aster-petal { fill: #d9a6ff; stroke: #f5e2ff; stroke-width: 0.9; }
 .orchid-svg .orchid-petal { fill: #cf8cff; stroke: #f7dbff; stroke-width: 1.2; }
 .orchid-svg .orchid-lip { fill: #fff4c2; stroke: #d477c9; stroke-width: 1.2; }
 
