@@ -1,6 +1,6 @@
 /* SimpleRain app shell: auto host/join, profile editing, host-owned game state. */
 
-const APP_VERSION = "1.1.9";
+const APP_VERSION = "1.2.0";
 const AUTO_CHANNEL = "simple-rain";
 const GAME_SAVE_KEY = "simplerain-host-cache";
 const MUSIC_MUTED_KEY = "simplerain-music-muted";
@@ -1676,9 +1676,13 @@ function drawLoadingFrame() {
   const rect = syncCanvasSize();
   ctx.clearRect(0, 0, rect.width, rect.height);
   if (activeGame) return;
-  ctx.fillStyle = "#12121f";
+  const grad = ctx.createLinearGradient(0, 0, 0, rect.height);
+  grad.addColorStop(0, "#10283a");
+  grad.addColorStop(0.45, "#173d4d");
+  grad.addColorStop(1, "#0d202d");
+  ctx.fillStyle = grad;
   ctx.fillRect(0, 0, rect.width, rect.height);
-  ctx.fillStyle = "#eef0ff";
+  ctx.fillStyle = "#eaf6ff";
   ctx.font = "700 18px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -1730,7 +1734,26 @@ document.addEventListener("click", (event) => {
   picker.classList.remove("open");
   $("#btn-music-picker")?.setAttribute("aria-expanded", "false");
 });
+function seedRainLayer() {
+  const layer = $("#rain-layer");
+  if (!layer || layer.childElementCount) return;
+  const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (prefersReduced) return;
+  const count = 44;
+  for (let i = 0; i < count; i++) {
+    const drop = document.createElement("i");
+    const dur = 2.6 + Math.random() * 3.4;
+    drop.style.left = `${Math.random() * 104 - 2}%`;
+    drop.style.animationDuration = `${dur.toFixed(2)}s`;
+    drop.style.animationDelay = `${(-Math.random() * dur).toFixed(2)}s`;
+    drop.style.opacity = (0.25 + Math.random() * 0.55).toFixed(2);
+    drop.style.height = `${(7 + Math.random() * 9).toFixed(1)}vh`;
+    layer.appendChild(drop);
+  }
+}
+
 $("#menu-version").textContent = `Version ${APP_VERSION}`;
+seedRainLayer();
 updateProfilePreview();
 updateMusicButton();
 initializeHomeInviteCode();

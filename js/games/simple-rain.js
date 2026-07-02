@@ -44,6 +44,37 @@
   ];
   const MUSIC_TRACKS = [
     {
+      /* "Petrichor" - an original rain-garden lullaby in A minor.
+       * 16 bars at ~63 BPM: harp-strummed ninth chords, a music-box melody,
+       * warm bass, and chance rain chimes. Composed for SimpleRain.
+       */
+      id: "petrichor",
+      name: "Petrichor",
+      mood: "Rainfall",
+      beat: 0.95,
+      chimes: [84, 86, 88, 91, 93],
+      bars: [
+        // A section - rainfall theme
+        { bass: 45, chord: [57, 60, 64, 71], mel: [[0, 76, 1.5], [1.5, 79, 0.5], [2, 81, 2]] },          // Am9
+        { bass: 41, chord: [57, 60, 65, 67], mel: [[0, 79, 1], [1, 76, 1], [2, 72, 2]] },                // Fmaj9
+        { bass: 48, chord: [55, 60, 64, 71], mel: [[0.5, 74, 0.5], [1, 76, 1], [2, 71, 2]] },            // Cmaj7
+        { bass: 43, chord: [55, 59, 62, 64], mel: [[0, 74, 1], [1, 71, 0.5], [1.5, 67, 0.5], [2, 69, 2]] }, // G6
+        { bass: 45, chord: [57, 60, 64, 71], mel: [[0, 76, 1.5], [1.5, 79, 0.5], [2, 81, 1], [3, 84, 1]] }, // Am9
+        { bass: 41, chord: [57, 60, 65, 67], mel: [[0, 81, 1], [1, 79, 1], [2, 76, 2]] },                // Fmaj9
+        { bass: 50, chord: [57, 62, 65, 72], mel: [[0, 74, 1], [1, 77, 1], [2, 76, 1], [3, 74, 1]] },    // Dm9
+        { bass: 52, chord: [52, 57, 59, 64], mel: [[0, 71, 2], [2, 69, 2]] },                            // Esus4
+        // B section - the koi pond answers
+        { bass: 41, chord: [60, 64, 65, 69], mel: [[0, 84, 1.5], [1.5, 81, 0.5], [2, 79, 2]] },          // Fmaj7
+        { bass: 52, chord: [59, 62, 64, 67], mel: [[0, 79, 1], [1, 76, 1], [2, 74, 2]] },                // Em7
+        { bass: 50, chord: [57, 60, 62, 65], mel: [[0, 74, 1], [1, 72, 0.5], [1.5, 69, 0.5], [2, 72, 2]] }, // Dm7
+        { bass: 48, chord: [55, 59, 62, 64], mel: [[0, 67, 1], [1, 71, 1], [2, 72, 2]] },                // Cmaj9
+        { bass: 41, chord: [60, 64, 65, 69], mel: [[0, 84, 1.5], [1.5, 81, 0.5], [2, 86, 2]] },          // Fmaj7 (peak)
+        { bass: 52, chord: [59, 62, 64, 67], mel: [[0, 84, 1], [1, 81, 1], [2, 79, 2]] },                // Em7
+        { bass: 50, chord: [57, 60, 62, 65], mel: [[0, 77, 1], [1, 74, 1], [2, 71, 1], [3, 67, 1]] },    // Dm7 (descent)
+        { bass: 45, chord: [57, 64, 71, 76], mel: [[0, 69, 3]] },                                        // Am(add9) home
+      ],
+    },
+    {
       id: "lotus-drift",
       name: "Lotus Drift",
       mood: "Peaceful",
@@ -168,6 +199,7 @@
     let musicShuffleQueue = [];
     let currentMusicTrack = null;
     let sampleGain = null;
+    let musicNextBarAt = 0;
     let eventSeq = 0;
     let seenEventSeq = 0;
     let ui = { board: null, hand: null, handTile: null, deck: null, reset: null, cells: new Map(), scale: 1 };
@@ -266,43 +298,43 @@
       return 440 * Math.pow(2, (note - 69) / 12);
     }
 
-    function musicTrack(id) {
-      return MUSIC_TRACKS.find((track) => track.id === id) || null;
-    }
+function musicTrack(id) {
+  return MUSIC_TRACKS.find((track) => track.id === id) || null;
+}
 
-    function activeMusicTracks() {
-      return selectedMusicTrackIds.map(musicTrack).filter(Boolean);
-    }
+function activeMusicTracks() {
+  return selectedMusicTrackIds.map(musicTrack).filter(Boolean);
+}
 
-    function shuffleTracks(tracks) {
-      const queue = tracks.slice();
-      for (let i = queue.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [queue[i], queue[j]] = [queue[j], queue[i]];
-      }
-      return queue;
-    }
+function shuffleTracks(tracks) {
+  const queue = tracks.slice();
+  for (let i = queue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [queue[i], queue[j]] = [queue[j], queue[i]];
+  }
+  return queue;
+}
 
-    function nextMusicTrack() {
-      const tracks = activeMusicTracks();
-      if (!tracks.length) return null;
-      musicShuffleQueue = musicShuffleQueue.filter((track) => selectedMusicTrackIds.includes(track.id));
-      if (!musicShuffleQueue.length) musicShuffleQueue = shuffleTracks(tracks);
-      if (tracks.length > 1 && musicShuffleQueue[0]?.id === currentMusicTrack?.id) {
-        const moved = musicShuffleQueue.shift();
-        musicShuffleQueue.push(moved);
-      }
-      return musicShuffleQueue.shift() || tracks[0];
-    }
+function nextMusicTrack() {
+  const tracks = activeMusicTracks();
+  if (!tracks.length) return null;
+  musicShuffleQueue = musicShuffleQueue.filter((track) => selectedMusicTrackIds.includes(track.id));
+  if (!musicShuffleQueue.length) musicShuffleQueue = shuffleTracks(tracks);
+  if (tracks.length > 1 && musicShuffleQueue[0]?.id === currentMusicTrack?.id) {
+    const moved = musicShuffleQueue.shift();
+    musicShuffleQueue.push(moved);
+  }
+  return musicShuffleQueue.shift() || tracks[0];
+}
 
-    function playMusicTone(freq, start, dur, vol, type = "sine", destination = musicGain || audioCtx.destination) {
+function playMusicTone(freq, start, dur, vol, type = "sine", destination = musicGain || audioCtx.destination, attack = 0.18) {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = type;
       osc.frequency.setValueAtTime(freq, start);
       osc.frequency.exponentialRampToValueAtTime(freq * 0.996, start + dur);
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(vol, start + 0.18);
+      gain.gain.exponentialRampToValueAtTime(vol, start + attack);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
       osc.connect(gain);
       gain.connect(destination);
@@ -310,34 +342,89 @@
       osc.stop(start + dur + 0.05);
     }
 
+    /* "Petrichor" bar scheduler: harp-strummed chords, a music-box melody,
+     * warm bass, and chance rain chimes, humanized a few ms off-grid.
+     */
+    function jitter(ms) { return (Math.random() - 0.5) * 2 * ms / 1000; }
+
+    function scheduleMusicBar(track, bar, at) {
+      const beat = track.beat;
+      const barLen = beat * 4;
+      const def = track.bars[bar % track.bars.length];
+      const dest = musicGain || audioCtx.destination;
+      // Bass: root held under the bar, an octave shimmer above it.
+      playMusicTone(noteFreq(def.bass), at + jitter(6), barLen * 0.96, 0.008, "triangle", dest, 0.30);
+      playMusicTone(noteFreq(def.bass + 12), at + 0.05, barLen * 0.9, 0.0035, "sine", dest, 0.36);
+      // Chord: a slow harp strum, low to high.
+      def.chord.forEach((note, i) => {
+        const strumAt = at + 0.09 * i + jitter(10);
+        playMusicTone(noteFreq(note), strumAt, barLen * 0.92 - 0.07 * i, 0.0045, "triangle", dest, 0.24);
+      });
+      // Melody: music-box voice with a faint octave halo.
+      for (const [beatPos, note, durBeats] of def.mel) {
+        if (note === null) continue;
+        const t0 = at + beatPos * beat + jitter(12);
+        const dur = durBeats * beat * 0.98;
+        const vol = 0.011 * (0.88 + Math.random() * 0.24);
+        playMusicTone(noteFreq(note), t0, dur, vol, "sine", dest, 0.05);
+        playMusicTone(noteFreq(note) * 2.0034, t0 + 0.012, dur * 0.8, vol * 0.20, "sine", dest, 0.05);
+      }
+      // Rain chimes: chance droplets from the high pentatonic sky.
+      if (track.chimes && Math.random() < 0.55) {
+        const n = Math.random() < 0.3 ? 2 : 1;
+        for (let i = 0; i < n; i++) {
+          const note = track.chimes[Math.floor(Math.random() * track.chimes.length)];
+          playMusicTone(noteFreq(note), at + Math.random() * barLen * 0.85, 1.5, 0.003, "sine", dest, 0.02);
+        }
+      }
+    }
+
+    function musicTrackLength(track) {
+      return track.bars ? track.bars.length : track.melody.length;
+    }
+
     function playMusicStep() {
       if (host.isMusicMuted?.()) return;
       try {
         ensureAudio();
-        if (!currentMusicTrack || musicStep >= currentMusicTrack.melody.length) {
+        if (!currentMusicTrack || musicStep >= musicTrackLength(currentMusicTrack)) {
           currentMusicTrack = nextMusicTrack();
           musicStep = 0;
+          musicNextBarAt = 0;
         }
         if (!currentMusicTrack) {
           stopMusic();
           return;
         }
-        const t = audioCtx.currentTime + 0.03;
         const track = currentMusicTrack;
-        const note = track.melody[musicStep % track.melody.length];
-        const root = track.bass[musicStep % track.bass.length];
-        const harmony = track.harmony?.[musicStep % track.harmony.length];
-        const stepSeconds = 60 / track.bpm * track.stepBeats;
-        if (note !== null) playMusicTone(noteFreq(note), t, track.melodyDur, track.melodyVol, track.wave);
-        if (root !== null) {
-          playMusicTone(noteFreq(root), t, track.bassDur, track.bassVol, track.accentWave);
-          playMusicTone(noteFreq(root + 7), t + 0.06, track.bassDur * 0.82, track.bassVol * 0.55, "sine");
+        let nextDelayMs;
+        if (track.bars) {
+          const barSeconds = track.beat * 4;
+          if (!musicNextBarAt || musicNextBarAt < audioCtx.currentTime) {
+            musicNextBarAt = audioCtx.currentTime + 0.08;
+          }
+          scheduleMusicBar(track, musicStep, musicNextBarAt);
+          musicNextBarAt += barSeconds;
+          musicStep++;
+          nextDelayMs = Math.max(60, (musicNextBarAt - audioCtx.currentTime - 0.30) * 1000);
+        } else {
+          const t = audioCtx.currentTime + 0.03;
+          const note = track.melody[musicStep % track.melody.length];
+          const root = track.bass[musicStep % track.bass.length];
+          const harmony = track.harmony?.[musicStep % track.harmony.length];
+          const stepSeconds = 60 / track.bpm * track.stepBeats;
+          if (note !== null) playMusicTone(noteFreq(note), t, track.melodyDur, track.melodyVol, track.wave);
+          if (root !== null) {
+            playMusicTone(noteFreq(root), t, track.bassDur, track.bassVol, track.accentWave);
+            playMusicTone(noteFreq(root + 7), t + 0.06, track.bassDur * 0.82, track.bassVol * 0.55, "sine");
+          }
+          if (harmony !== null && harmony !== undefined) playMusicTone(noteFreq(harmony), t + stepSeconds * 0.45, track.melodyDur * 0.65, track.harmonyVol, "sine");
+          musicStep++;
+          nextDelayMs = stepSeconds * 1000;
         }
-        if (harmony !== null && harmony !== undefined) playMusicTone(noteFreq(harmony), t + stepSeconds * 0.45, track.melodyDur * 0.65, track.harmonyVol, "sine");
-        musicStep++;
         if (musicTimer !== null) {
           clearTimeout(musicTimer);
-          musicTimer = setTimeout(playMusicStep, stepSeconds * 1000);
+          musicTimer = setTimeout(playMusicStep, nextDelayMs);
         }
       } catch {}
     }
@@ -352,6 +439,7 @@
       if (!musicTimer) return;
       clearTimeout(musicTimer);
       musicTimer = null;
+      musicNextBarAt = 0;
     }
 
     function setMusicTracks(ids) {
@@ -378,6 +466,19 @@
       try {
         const destination = ensureSampleGain();
         const t = audioCtx.currentTime + 0.03;
+        if (track.bars) {
+          const beat = track.beat;
+          const bar = track.bars[0];
+          playMusicTone(noteFreq(bar.bass), t, beat * 3.6, 0.008, "triangle", destination, 0.20);
+          bar.chord.forEach((note, i) => {
+            playMusicTone(noteFreq(note), t + 0.09 * i, beat * 3.4 - 0.07 * i, 0.006, "triangle", destination, 0.16);
+          });
+          for (const [beatPos, note, durBeats] of bar.mel) {
+            if (note === null) continue;
+            playMusicTone(noteFreq(note), t + beatPos * beat, durBeats * beat, 0.013, "sine", destination, 0.05);
+          }
+          return;
+        }
         const stepSeconds = 60 / track.bpm * track.stepBeats;
         const steps = Math.min(8, track.melody.length);
         for (let i = 0; i < steps; i++) {
@@ -1244,6 +1345,14 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
+      // Moonlight pooling on the water.
+      const moon = ctx.createRadialGradient(W * 0.72, H * 0.16, 10, W * 0.72, H * 0.16, Math.max(W, H) * 0.55);
+      moon.addColorStop(0, "rgba(190,229,255,0.10)");
+      moon.addColorStop(0.4, "rgba(150,205,240,0.045)");
+      moon.addColorStop(1, "rgba(150,205,240,0)");
+      ctx.fillStyle = moon;
+      ctx.fillRect(0, 0, W, H);
+
       ctx.save();
       ctx.globalAlpha = 0.14;
       ctx.strokeStyle = "#d8f2ff";
@@ -1265,12 +1374,23 @@
       for (const d of drops) {
         d.y += d.v / 60;
         d.x += d.s * 0.08;
-        if (d.y > H + 12) { d.y = -12; d.x = Math.random() * W; }
+        if (d.y > H + 12) {
+          if (Math.random() < 0.30) ripples.push({ x: d.x / W, y: rand(0.55, 0.97), life: 620, maxLife: 620 });
+          d.y = -12;
+          d.x = Math.random() * W;
+        }
         ctx.beginPath();
         ctx.moveTo(d.x, d.y);
         ctx.lineTo(d.x - d.s * 1.6, d.y + d.s * 8);
         ctx.stroke();
       }
+
+      // Soft vignette to frame the pond.
+      const vig = ctx.createRadialGradient(W / 2, H * 0.52, Math.min(W, H) * 0.42, W / 2, H * 0.52, Math.max(W, H) * 0.82);
+      vig.addColorStop(0, "rgba(5,14,22,0)");
+      vig.addColorStop(1, "rgba(5,14,22,0.42)");
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, W, H);
     }
 
     function drawHeader(W) {
@@ -2350,7 +2470,7 @@
       getSnapshot() { return currentSnapshot(); },
       onPlayerList() { if (isHost()) { reconcileActivePlayerTiles(); host.broadcastState(makeSnapshot()); } },
       setMusicMuted(muted) {
-        if (musicGain) musicGain.gain.setTargetAtTime(muted ? 0 : 1, audioCtx.currentTime, 0.02);
+        if (musicGain) musicGain.gain.setTargetAtTime(muted ? 0 : 1, audioCtx.currentTime, muted ? 0.25 : 0.6);
         if (muted) stopMusic();
         else startMusic();
       },
