@@ -75,106 +75,166 @@
       ],
     },
     {
+      /* "Lotus Drift" - a water-garden reverie in A minor.
+       * 12 bars at ~72 BPM: slow harp swells and a melody that circles
+       * like a lotus petal turning on still water.
+       */
       id: "lotus-drift",
       name: "Lotus Drift",
       mood: "Peaceful",
-      bpm: 72,
-      melody: [69, 72, 76, 74, 72, null, 67, 64, 67, 71, 74, 72, 69, 64, null, 62],
-      bass: [45, null, 52, null, 48, null, 55, null, 43, null, 50, null, 48, null, 52, null],
-      harmony: [57, null, null, 60, null, 64, null, null, 55, null, null, 59, null, 62, null, null],
-      stepBeats: 2,
-      melodyDur: 2.25,
-      bassDur: 3.5,
-      wave: "sine",
-      accentWave: "triangle",
-      melodyVol: 0.010,
-      bassVol: 0.007,
-      harmonyVol: 0.004,
+      beat: 0.83,
+      strum: 0.14,
+      chimeChance: 0.5,
+      chimes: [81, 84, 86, 88, 93],
+      bars: [
+        // A section - the petal settles on the pond
+        { bass: 45, chord: [57, 60, 64, 71], mel: [[0, 72, 2], [2, 74, 1], [3, 76, 1]] },                 // Am9
+        { bass: 41, chord: [57, 60, 65, 67], mel: [[0, 79, 2.5], [2.5, 76, 1.5]] },                       // Fmaj9
+        { bass: 50, chord: [57, 62, 65, 72], mel: [[0, 74, 1], [1, 72, 1], [2, 69, 2]] },                 // Dm9
+        { bass: 52, chord: [55, 59, 62, 64], mel: [[0.5, 67, 1], [1.5, 71, 1], [2.5, 74, 1.5]] },         // Em7
+        { bass: 45, chord: [57, 60, 64, 71], mel: [[0, 76, 2], [2, 79, 1.5]] },                           // Am9
+        { bass: 48, chord: [55, 60, 64, 71], mel: [[0, 81, 1], [1, 79, 1], [2, 76, 2]] },                 // Cmaj7
+        // B section - a slow ripple outward
+        { bass: 41, chord: [57, 60, 65, 67], mel: [[0, 84, 1.5], [1.5, 81, 0.5], [2, 79, 2]] },           // Fmaj9 (crest)
+        { bass: 43, chord: [55, 59, 62, 64], mel: [[0, 76, 1], [1, 74, 1], [2, 71, 2]] },                 // G6
+        { bass: 45, chord: [57, 60, 64, 71], mel: [[0, 72, 1.5], [1.5, 74, 0.5], [2, 76, 2]] },           // Am9
+        { bass: 50, chord: [57, 62, 65, 72], mel: [[0, 77, 2], [2, 74, 2]] },                             // Dm9
+        { bass: 52, chord: [52, 57, 59, 64], mel: [[0, 71, 2], [2, 67, 2]] },                             // Esus4
+        { bass: 45, chord: [57, 64, 71, 76], mel: [[0, 69, 4]] },                                         // Am(add9) rest
+      ],
     },
     {
+      /* "Moon Pool" - a sleepy nocturne in E minor.
+       * 8 bars at ~58 BPM: soft sine chords strummed like moonlight on
+       * water, with a low, unhurried melody and rare distant chimes.
+       */
       id: "moon-pool",
       name: "Moon Pool",
       mood: "Sleepy",
-      bpm: 58,
-      melody: [64, null, 67, 69, null, 67, 62, null, 60, null, 64, 67, null, 64, 59, null],
-      bass: [40, null, null, 47, null, null, 45, null, 38, null, null, 45, null, null, 43, null],
-      harmony: [52, null, 55, null, 57, null, null, null, 50, null, 53, null, 55, null, null, null],
-      stepBeats: 2,
-      melodyDur: 2.9,
-      bassDur: 4.4,
-      wave: "sine",
-      accentWave: "sine",
-      melodyVol: 0.008,
-      bassVol: 0.006,
-      harmonyVol: 0.0035,
+      beat: 1.03,
+      strum: 0.18,
+      chimeChance: 0.3,
+      chimes: [88, 91, 93, 95],
+      bassWave: "sine",
+      chordWave: "sine",
+      level: 0.85,
+      bars: [
+        { bass: 40, chord: [52, 55, 59, 66], mel: [[0, 76, 2.5], [2.5, 74, 1.5]] },                       // Em9
+        { bass: 48, chord: [52, 55, 60, 62], mel: [[0, 71, 4]] },                                         // Cmaj9
+        { bass: 45, chord: [52, 57, 60, 71], mel: [[0, 72, 2], [2, 69, 2]] },                             // Am9
+        { bass: 47, chord: [54, 59, 64, 66], mel: [[0.5, 66, 1.5], [2, 64, 2]] },                         // Bsus4
+        { bass: 40, chord: [52, 55, 59, 66], mel: [[0, 74, 2], [2, 76, 2]] },                             // Em9
+        { bass: 43, chord: [55, 59, 62, 66], mel: [[0, 78, 2.5], [2.5, 74, 1.5]] },                       // Gmaj7 (moonrise)
+        { bass: 45, chord: [52, 57, 60, 64], mel: [[0, 72, 2], [2, 71, 1], [3, 67, 1]] },                 // Am7
+        { bass: 40, chord: [52, 59, 64, 66], mel: [[0, 64, 4]] },                                         // Em(add9) sleep
+      ],
     },
     {
+      /* "Clear Current" - a bright focus piece in C major.
+       * 12 bars at ~84 BPM: crisp triangle strums that pulse like light
+       * through running water, with a melody that keeps moving forward.
+       */
       id: "clear-current",
       name: "Clear Current",
       mood: "Focus",
-      bpm: 84,
-      melody: [72, 76, 79, null, 76, 74, 72, 69, 71, 74, 78, null, 74, 72, 69, 67],
-      bass: [48, null, 55, null, 52, null, 59, null, 45, null, 52, null, 50, null, 57, null],
-      harmony: [60, null, 64, null, null, 67, null, null, 57, null, 62, null, null, 66, null, null],
-      stepBeats: 1.5,
-      melodyDur: 1.55,
-      bassDur: 2.6,
-      wave: "triangle",
-      accentWave: "sine",
-      melodyVol: 0.009,
-      bassVol: 0.0065,
-      harmonyVol: 0.0035,
+      beat: 0.71,
+      strum: 0.07,
+      chimeChance: 0.4,
+      chimes: [84, 88, 91, 95, 96],
+      chordWave: "triangle",
+      melWave: "triangle",
+      bars: [
+        { bass: 48, chord: [55, 60, 64, 71], mel: [[0, 72, 1], [1, 76, 1], [2, 79, 1.5], [3.5, 76, 0.5]] }, // Cmaj7
+        { bass: 45, chord: [57, 60, 64, 67], mel: [[0, 74, 1], [1, 72, 1], [2, 69, 2]] },                   // Am7
+        { bass: 41, chord: [57, 60, 65, 69], mel: [[0, 72, 1], [1, 74, 1], [2, 76, 1], [3, 77, 1]] },       // Fmaj9
+        { bass: 43, chord: [55, 59, 62, 65], mel: [[0, 79, 1.5], [1.5, 77, 0.5], [2, 74, 2]] },             // G7
+        { bass: 48, chord: [55, 60, 64, 71], mel: [[0, 76, 1], [1, 79, 1], [2, 81, 1.5], [3.5, 79, 0.5]] }, // Cmaj7
+        { bass: 40, chord: [55, 59, 64, 67], mel: [[0, 83, 1], [1, 79, 1], [2, 76, 2]] },                   // Em7
+        { bass: 41, chord: [57, 60, 65, 69], mel: [[0, 81, 1], [1, 77, 1], [2, 74, 1], [3, 72, 1]] },       // Fmaj9
+        { bass: 43, chord: [55, 59, 62, 67], mel: [[0, 71, 1.5], [1.5, 74, 0.5], [2, 79, 2]] },             // Gsus4
+        { bass: 45, chord: [57, 60, 64, 67], mel: [[0, 76, 1], [1, 72, 1], [2, 74, 1.5]] },                 // Am7
+        { bass: 50, chord: [57, 62, 65, 69], mel: [[0, 74, 1], [1, 77, 1], [2, 81, 2]] },                   // Dm9
+        { bass: 43, chord: [55, 59, 62, 65], mel: [[0, 79, 1], [1, 77, 1], [2, 74, 1], [3, 71, 1]] },       // G7 (turn)
+        { bass: 48, chord: [55, 60, 64, 72], mel: [[0, 72, 3]] },                                           // C(add9) arrive
+      ],
     },
     {
+      /* "Moss Bells" - a gentle carillon in G major.
+       * 8 bars at ~66 BPM: bell-round chords over a mossy bass, the
+       * melody swinging like temple bells wrapped in green.
+       */
       id: "moss-bells",
       name: "Moss Bells",
       mood: "Peaceful",
-      bpm: 66,
-      melody: [67, 71, 74, null, 76, 74, 71, null, 69, 72, 76, null, 74, 71, 67, null],
-      bass: [43, null, 50, null, 47, null, 55, null, 45, null, 52, null, 47, null, 50, null],
-      harmony: [55, 59, null, null, 62, null, 59, null, 57, 60, null, null, 62, null, 59, null],
-      stepBeats: 2,
-      melodyDur: 2.1,
-      bassDur: 3.8,
-      wave: "sine",
-      accentWave: "triangle",
-      melodyVol: 0.009,
-      bassVol: 0.006,
-      harmonyVol: 0.0045,
+      beat: 0.91,
+      strum: 0.12,
+      chimeChance: 0.6,
+      chimes: [83, 86, 88, 91, 95],
+      bars: [
+        { bass: 43, chord: [55, 59, 62, 69], mel: [[0, 74, 1.5], [1.5, 71, 0.5], [2, 67, 2]] },           // G(add9)
+        { bass: 40, chord: [55, 59, 64, 66], mel: [[0, 71, 1], [1, 74, 1], [2, 76, 2]] },                 // Em9
+        { bass: 48, chord: [55, 60, 64, 71], mel: [[0, 79, 2], [2, 76, 1], [3, 74, 1]] },                 // Cmaj7
+        { bass: 50, chord: [54, 57, 62, 66], mel: [[0, 74, 1.5], [1.5, 71, 0.5], [2, 69, 2]] },           // D6
+        { bass: 43, chord: [55, 59, 62, 69], mel: [[0, 67, 1], [1, 71, 1], [2, 74, 2]] },                 // G(add9)
+        { bass: 45, chord: [57, 60, 64, 67], mel: [[0, 76, 1.5], [1.5, 79, 0.5], [2, 81, 2]] },           // Am7 (lift)
+        { bass: 48, chord: [55, 60, 64, 71], mel: [[0, 79, 1], [1, 76, 1], [2, 74, 1], [3, 71, 1]] },     // Cmaj7
+        { bass: 43, chord: [55, 62, 66, 71], mel: [[0, 67, 4]] },                                         // G6/9 home
+      ],
     },
     {
+      /* "Cloud Hammock" - a weightless drift in F lydian.
+       * 8 bars at ~52 BPM: the slowest sway in the set, all sine,
+       * long tones hanging like a hammock strung between clouds.
+       */
       id: "cloud-hammock",
       name: "Cloud Hammock",
       mood: "Sleepy",
-      bpm: 52,
-      melody: [60, null, null, 64, 67, null, 65, null, 59, null, null, 62, 65, null, 64, null],
-      bass: [36, null, null, null, 43, null, null, null, 41, null, null, null, 48, null, null, null],
-      harmony: [48, null, 52, null, null, 55, null, null, 47, null, 50, null, null, 53, null, null],
-      stepBeats: 2,
-      melodyDur: 3.2,
-      bassDur: 5.4,
-      wave: "sine",
-      accentWave: "sine",
-      melodyVol: 0.0075,
-      bassVol: 0.0055,
-      harmonyVol: 0.003,
+      beat: 1.15,
+      strum: 0.22,
+      chimeChance: 0.25,
+      chimes: [88, 90, 93, 97],
+      bassWave: "sine",
+      chordWave: "sine",
+      level: 0.8,
+      bars: [
+        { bass: 41, chord: [53, 57, 60, 67], mel: [[0, 72, 3], [3, 74, 1]] },                             // Fmaj9
+        { bass: 43, chord: [55, 59, 62, 67], mel: [[0, 71, 4]] },                                         // G6 (lydian lift)
+        { bass: 45, chord: [57, 60, 64, 72], mel: [[0, 76, 2.5], [2.5, 72, 1.5]] },                       // Am7
+        { bass: 41, chord: [53, 60, 65, 69], mel: [[0, 69, 4]] },                                         // Fmaj7
+        { bass: 38, chord: [53, 57, 62, 65], mel: [[0, 74, 3], [3, 72, 1]] },                             // Dm11
+        { bass: 43, chord: [55, 59, 64, 66], mel: [[0, 71, 2.5], [2.5, 67, 1.5]] },                       // Gmaj7
+        { bass: 45, chord: [57, 60, 64, 71], mel: [[0, 64, 4]] },                                         // Am9
+        { bass: 41, chord: [53, 60, 67, 72], mel: [[0, 65, 4]] },                                         // F(add9) float
+      ],
     },
     {
+      /* "Rain Abacus" - a ticking focus piece in D dorian.
+       * 12 bars at ~92 BPM: quick triangle arpeggios counting raindrops,
+       * a steady walking bass, and frequent droplet chimes.
+       */
       id: "rain-abacus",
       name: "Rain Abacus",
       mood: "Focus",
-      bpm: 92,
-      melody: [69, 71, 72, 76, null, 74, 72, 71, 67, 69, 71, 74, null, 72, 71, 69],
-      bass: [45, null, 52, null, 45, null, 52, null, 43, null, 50, null, 43, null, 50, null],
-      harmony: [57, null, null, 60, 64, null, null, null, 55, null, null, 59, 62, null, null, null],
-      stepBeats: 1.25,
-      melodyDur: 1.25,
-      bassDur: 2.1,
-      wave: "triangle",
-      accentWave: "triangle",
-      melodyVol: 0.0085,
-      bassVol: 0.006,
-      harmonyVol: 0.003,
+      beat: 0.65,
+      strum: 0.05,
+      chimeChance: 0.7,
+      chimes: [86, 89, 91, 94, 98],
+      chordWave: "triangle",
+      melWave: "triangle",
+      bars: [
+        { bass: 50, chord: [57, 62, 65, 72], mel: [[0, 74, 0.5], [0.5, 77, 0.5], [1, 81, 1], [2, 79, 1], [3, 77, 1]] }, // Dm9
+        { bass: 43, chord: [55, 59, 65, 67], mel: [[0, 74, 0.5], [0.5, 71, 0.5], [1, 74, 1], [2, 79, 2]] },             // G9
+        { bass: 45, chord: [57, 60, 64, 71], mel: [[0, 76, 0.5], [0.5, 79, 0.5], [1, 81, 1], [2, 84, 2]] },             // Am9
+        { bass: 48, chord: [55, 60, 64, 71], mel: [[0, 83, 1], [1, 79, 1], [2, 76, 1], [3, 74, 1]] },                   // Cmaj7
+        { bass: 50, chord: [57, 62, 65, 72], mel: [[0, 77, 0.5], [0.5, 81, 0.5], [1, 84, 1.5], [2.5, 81, 1.5]] },       // Dm9
+        { bass: 40, chord: [55, 59, 64, 67], mel: [[0, 79, 1], [1, 76, 0.5], [1.5, 74, 0.5], [2, 71, 2]] },             // Em7
+        { bass: 41, chord: [57, 60, 65, 69], mel: [[0, 72, 0.5], [0.5, 74, 0.5], [1, 77, 1], [2, 81, 2]] },             // Fmaj9
+        { bass: 43, chord: [55, 62, 65, 71], mel: [[0, 79, 1], [1, 77, 1], [2, 74, 1], [3, 71, 1]] },                   // G13
+        { bass: 50, chord: [57, 62, 65, 72], mel: [[0, 74, 1], [1, 77, 0.5], [1.5, 79, 0.5], [2, 81, 1], [3, 84, 1]] }, // Dm9
+        { bass: 45, chord: [57, 60, 64, 71], mel: [[0, 86, 1], [1, 84, 1], [2, 81, 1], [3, 79, 1]] },                   // Am9 (peak)
+        { bass: 47, chord: [53, 59, 62, 69], mel: [[0, 77, 1], [1, 74, 1], [2, 71, 1], [3, 69, 1]] },                   // Bm7b5 (turn)
+        { bass: 50, chord: [57, 62, 69, 74], mel: [[0, 74, 2.5], [2.5, 76, 1.5]] },                                     // Dm(add9) reset
+      ],
     },
   ];
 
@@ -342,8 +402,9 @@ function playMusicTone(freq, start, dur, vol, type = "sine", destination = music
       osc.stop(start + dur + 0.05);
     }
 
-    /* "Petrichor" bar scheduler: harp-strummed chords, a music-box melody,
-     * warm bass, and chance rain chimes, humanized a few ms off-grid.
+    /* Bar scheduler: harp-strummed chords, a music-box melody, warm bass,
+     * and chance rain chimes, humanized a few ms off-grid. Per-track fields
+     * (strum, chimeChance, waves, level) let each song keep its own voice.
      */
     function jitter(ms) { return (Math.random() - 0.5) * 2 * ms / 1000; }
 
@@ -352,35 +413,40 @@ function playMusicTone(freq, start, dur, vol, type = "sine", destination = music
       const barLen = beat * 4;
       const def = track.bars[bar % track.bars.length];
       const dest = musicGain || audioCtx.destination;
+      const strum = track.strum ?? 0.09;
+      const level = track.level ?? 1;
+      const bassWave = track.bassWave || "triangle";
+      const chordWave = track.chordWave || "triangle";
+      const melWave = track.melWave || "sine";
       // Bass: root held under the bar, an octave shimmer above it.
-      playMusicTone(noteFreq(def.bass), at + jitter(6), barLen * 0.96, 0.008, "triangle", dest, 0.30);
-      playMusicTone(noteFreq(def.bass + 12), at + 0.05, barLen * 0.9, 0.0035, "sine", dest, 0.36);
+      playMusicTone(noteFreq(def.bass), at + jitter(6), barLen * 0.96, 0.008 * level, bassWave, dest, 0.30);
+      playMusicTone(noteFreq(def.bass + 12), at + 0.05, barLen * 0.9, 0.0035 * level, "sine", dest, 0.36);
       // Chord: a slow harp strum, low to high.
       def.chord.forEach((note, i) => {
-        const strumAt = at + 0.09 * i + jitter(10);
-        playMusicTone(noteFreq(note), strumAt, barLen * 0.92 - 0.07 * i, 0.0045, "triangle", dest, 0.24);
+        const strumAt = at + strum * i + jitter(10);
+        playMusicTone(noteFreq(note), strumAt, barLen * 0.92 - 0.07 * i, 0.0045 * level, chordWave, dest, 0.24);
       });
       // Melody: music-box voice with a faint octave halo.
       for (const [beatPos, note, durBeats] of def.mel) {
         if (note === null) continue;
         const t0 = at + beatPos * beat + jitter(12);
         const dur = durBeats * beat * 0.98;
-        const vol = 0.011 * (0.88 + Math.random() * 0.24);
-        playMusicTone(noteFreq(note), t0, dur, vol, "sine", dest, 0.05);
+        const vol = 0.011 * level * (0.88 + Math.random() * 0.24);
+        playMusicTone(noteFreq(note), t0, dur, vol, melWave, dest, 0.05);
         playMusicTone(noteFreq(note) * 2.0034, t0 + 0.012, dur * 0.8, vol * 0.20, "sine", dest, 0.05);
       }
       // Rain chimes: chance droplets from the high pentatonic sky.
-      if (track.chimes && Math.random() < 0.55) {
+      if (track.chimes && Math.random() < (track.chimeChance ?? 0.55)) {
         const n = Math.random() < 0.3 ? 2 : 1;
         for (let i = 0; i < n; i++) {
           const note = track.chimes[Math.floor(Math.random() * track.chimes.length)];
-          playMusicTone(noteFreq(note), at + Math.random() * barLen * 0.85, 1.5, 0.003, "sine", dest, 0.02);
+          playMusicTone(noteFreq(note), at + Math.random() * barLen * 0.85, 1.5, 0.003 * level, "sine", dest, 0.02);
         }
       }
     }
 
     function musicTrackLength(track) {
-      return track.bars ? track.bars.length : track.melody.length;
+      return track.bars.length;
     }
 
     function playMusicStep() {
@@ -397,31 +463,14 @@ function playMusicTone(freq, start, dur, vol, type = "sine", destination = music
           return;
         }
         const track = currentMusicTrack;
-        let nextDelayMs;
-        if (track.bars) {
-          const barSeconds = track.beat * 4;
-          if (!musicNextBarAt || musicNextBarAt < audioCtx.currentTime) {
-            musicNextBarAt = audioCtx.currentTime + 0.08;
-          }
-          scheduleMusicBar(track, musicStep, musicNextBarAt);
-          musicNextBarAt += barSeconds;
-          musicStep++;
-          nextDelayMs = Math.max(60, (musicNextBarAt - audioCtx.currentTime - 0.30) * 1000);
-        } else {
-          const t = audioCtx.currentTime + 0.03;
-          const note = track.melody[musicStep % track.melody.length];
-          const root = track.bass[musicStep % track.bass.length];
-          const harmony = track.harmony?.[musicStep % track.harmony.length];
-          const stepSeconds = 60 / track.bpm * track.stepBeats;
-          if (note !== null) playMusicTone(noteFreq(note), t, track.melodyDur, track.melodyVol, track.wave);
-          if (root !== null) {
-            playMusicTone(noteFreq(root), t, track.bassDur, track.bassVol, track.accentWave);
-            playMusicTone(noteFreq(root + 7), t + 0.06, track.bassDur * 0.82, track.bassVol * 0.55, "sine");
-          }
-          if (harmony !== null && harmony !== undefined) playMusicTone(noteFreq(harmony), t + stepSeconds * 0.45, track.melodyDur * 0.65, track.harmonyVol, "sine");
-          musicStep++;
-          nextDelayMs = stepSeconds * 1000;
+        const barSeconds = track.beat * 4;
+        if (!musicNextBarAt || musicNextBarAt < audioCtx.currentTime) {
+          musicNextBarAt = audioCtx.currentTime + 0.08;
         }
+        scheduleMusicBar(track, musicStep, musicNextBarAt);
+        musicNextBarAt += barSeconds;
+        musicStep++;
+        const nextDelayMs = Math.max(60, (musicNextBarAt - audioCtx.currentTime - 0.30) * 1000);
         if (musicTimer !== null) {
           clearTimeout(musicTimer);
           musicTimer = setTimeout(playMusicStep, nextDelayMs);
@@ -466,29 +515,18 @@ function playMusicTone(freq, start, dur, vol, type = "sine", destination = music
       try {
         const destination = ensureSampleGain();
         const t = audioCtx.currentTime + 0.03;
-        if (track.bars) {
-          const beat = track.beat;
-          const bar = track.bars[0];
-          playMusicTone(noteFreq(bar.bass), t, beat * 3.6, 0.008, "triangle", destination, 0.20);
-          bar.chord.forEach((note, i) => {
-            playMusicTone(noteFreq(note), t + 0.09 * i, beat * 3.4 - 0.07 * i, 0.006, "triangle", destination, 0.16);
-          });
-          for (const [beatPos, note, durBeats] of bar.mel) {
-            if (note === null) continue;
-            playMusicTone(noteFreq(note), t + beatPos * beat, durBeats * beat, 0.013, "sine", destination, 0.05);
-          }
-          return;
-        }
-        const stepSeconds = 60 / track.bpm * track.stepBeats;
-        const steps = Math.min(8, track.melody.length);
-        for (let i = 0; i < steps; i++) {
-          const start = t + i * stepSeconds;
-          const note = track.melody[i % track.melody.length];
-          const root = track.bass[i % track.bass.length];
-          const harmony = track.harmony?.[i % track.harmony.length];
-          if (note !== null) playMusicTone(noteFreq(note), start, Math.min(track.melodyDur, stepSeconds * 1.35), track.melodyVol * 1.25, track.wave, destination);
-          if (root !== null) playMusicTone(noteFreq(root), start, Math.min(track.bassDur, stepSeconds * 2.2), track.bassVol, track.accentWave, destination);
-          if (harmony !== null && harmony !== undefined) playMusicTone(noteFreq(harmony), start + stepSeconds * 0.45, Math.min(track.melodyDur * 0.65, stepSeconds), track.harmonyVol * 1.2, "sine", destination);
+        const beat = track.beat;
+        const bar = track.bars[0];
+        const strum = track.strum ?? 0.09;
+        const chordWave = track.chordWave || "triangle";
+        const melWave = track.melWave || "sine";
+        playMusicTone(noteFreq(bar.bass), t, beat * 3.6, 0.008, track.bassWave || "triangle", destination, 0.20);
+        bar.chord.forEach((note, i) => {
+          playMusicTone(noteFreq(note), t + strum * i, beat * 3.4 - 0.07 * i, 0.006, chordWave, destination, 0.16);
+        });
+        for (const [beatPos, note, durBeats] of bar.mel) {
+          if (note === null) continue;
+          playMusicTone(noteFreq(note), t + beatPos * beat, durBeats * beat, 0.013, melWave, destination, 0.05);
         }
       } catch {}
     }
